@@ -1,6 +1,7 @@
 import { pgTable, text, serial, integer, date, doublePrecision, boolean, timestamp } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
+import { sql } from "drizzle-orm";
 
 // Plumber model
 export const plumbers = pgTable("plumbers", {
@@ -57,7 +58,7 @@ export const payrolls = pgTable("payrolls", {
   id: serial("id").primaryKey(),
   weekEndingDate: date("week_ending_date").notNull(),
   status: text("status").notNull().default("draft"), // draft or finalized
-  createdAt: timestamp("created_at").notNull().defaultNow(),
+  createdAt: timestamp("created_at").notNull().default(sql`now()`),
 });
 
 export const insertPayrollSchema = createInsertSchema(payrolls).pick({
