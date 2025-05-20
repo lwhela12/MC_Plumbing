@@ -1,15 +1,16 @@
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { Printer, Download } from "lucide-react";
-import { formatCurrency } from "@/lib/utils";
+import { formatCurrency, exportToCsv } from "@/lib/utils";
 import { PayrollSummary } from "@shared/schema";
 
 interface WeeklySummaryProps {
   data: PayrollSummary[];
   isLoading: boolean;
+  payrollId?: number;
 }
 
-const WeeklySummary: React.FC<WeeklySummaryProps> = ({ data, isLoading }) => {
+const WeeklySummary: React.FC<WeeklySummaryProps> = ({ data, isLoading, payrollId }) => {
   if (isLoading) {
     return (
       <div className="bg-white rounded-lg shadow-card p-6 mb-6">
@@ -44,16 +45,29 @@ const WeeklySummary: React.FC<WeeklySummaryProps> = ({ data, isLoading }) => {
     { jobCount: 0, totalRevenue: 0, totalCosts: 0, totalCommission: 0 }
   );
 
+  const handleExport = () => {
+    const rows: (string | number)[][] = [
+      ["Plumber", "Jobs", "Revenue", "Costs", "Commission"],
+      ...data.map(i => [i.plumberName, i.jobCount, i.totalRevenue, i.totalCosts, i.totalCommission]),
+      ["Total", totals.jobCount, totals.totalRevenue, totals.totalCosts, totals.totalCommission]
+    ];
+    exportToCsv(`weekly-summary-${payrollId ?? ''}.csv`, rows);
+  };
+
+  const handlePrint = () => {
+    window.print();
+  };
+
   return (
     <div className="bg-white rounded-lg shadow-card p-6 mb-6">
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-lg font-medium text-neutral-darker">Weekly Summary</h2>
         <div className="flex space-x-2">
-          <Button variant="outline" size="sm">
+          <Button variant="outline" size="sm" onClick={handlePrint}>
             <Printer className="h-4 w-4 mr-1" />
             Print
           </Button>
-          <Button variant="outline" size="sm">
+          <Button variant="outline" size="sm" onClick={handleExport}>
             <Download className="h-4 w-4 mr-1" />
             Export
           </Button>

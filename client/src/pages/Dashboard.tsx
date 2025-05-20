@@ -9,8 +9,8 @@ import { formatDateForDisplay } from "@/lib/dateUtils";
 import { Payroll, PayrollSummary, Plumber, Job } from "@shared/schema";
 
 const Dashboard: React.FC = () => {
-  const { data: currentPayroll, isLoading: payrollLoading } = useQuery<Payroll>({
-    queryKey: ["/api/payrolls/current"],
+  const { data: previousPayroll, isLoading: payrollLoading } = useQuery<Payroll>({
+    queryKey: ["/api/payrolls/latest-finalized"],
   });
 
   const { data: activePlumbers, isLoading: plumbersLoading } = useQuery<Plumber[]>({
@@ -18,13 +18,13 @@ const Dashboard: React.FC = () => {
   });
 
   const { data: payrollJobs, isLoading: jobsLoading } = useQuery<Job[]>({
-    queryKey: [`/api/jobs/payroll/${currentPayroll?.id}`],
-    enabled: !!currentPayroll?.id,
+    queryKey: [`/api/jobs/payroll/${previousPayroll?.id}`],
+    enabled: !!previousPayroll?.id,
   });
 
   const { data: payrollSummary, isLoading: summaryLoading } = useQuery<PayrollSummary[]>({
-    queryKey: [`/api/payrolls/${currentPayroll?.id}/summary`],
-    enabled: !!currentPayroll?.id,
+    queryKey: [`/api/payrolls/${previousPayroll?.id}/summary`],
+    enabled: !!previousPayroll?.id,
   });
 
   const totalRevenue = payrollJobs?.reduce((sum, job) => sum + job.revenue, 0) || 0;
@@ -36,7 +36,11 @@ const Dashboard: React.FC = () => {
         <p className="text-sm text-neutral-dark">
           Payroll week ending:{" "}
           <span className="font-medium">
-            {payrollLoading ? "Loading..." : formatDateForDisplay(currentPayroll?.weekEndingDate)}
+            {payrollLoading
+              ? "Loading..."
+              : previousPayroll
+              ? formatDateForDisplay(previousPayroll.weekEndingDate)
+              : "No data"}
           </span>
         </p>
       </div>
@@ -66,7 +70,8 @@ const Dashboard: React.FC = () => {
       {/* Weekly Summary */}
       <WeeklySummary
         data={payrollSummary || []}
-        isLoading={summaryLoading || !currentPayroll}
+        isLoading={summaryLoading || !previousPayroll}
+        payrollId={previousPayroll?.id}
       />
 
       {/* Quick Actions and Recent Activity */}

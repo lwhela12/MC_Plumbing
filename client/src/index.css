@@ -11,7 +11,8 @@
   body {
     height: 100%;
     font-family: 'Inter', sans-serif;
-    @apply bg-gray-50 text-gray-900 antialiased;
+    background: linear-gradient(to bottom right, #f0f4ff, #ffffff);
+    @apply text-gray-900 antialiased;
   }
 
   #root {

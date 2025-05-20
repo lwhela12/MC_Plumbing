@@ -238,6 +238,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/payrolls/latest-finalized", async (_req, res) => {
+    try {
+      const payroll = await storage.getLatestFinalizedPayroll();
+      if (!payroll) {
+        return res.status(404).json({ message: "No finalized payroll" });
+      }
+      res.json(payroll);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch payroll" });
+    }
+  });
+
   app.get("/api/payrolls/:id", async (req, res) => {
     try {
       const id = parseInt(req.params.id);

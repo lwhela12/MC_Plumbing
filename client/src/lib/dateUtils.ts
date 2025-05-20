@@ -128,3 +128,8 @@ export function getPastWeekEndingDates(count: number): Date[] {
   
   return dates;
 }
+
+export function getPreviousFriday(date: Date = new Date()): Date {
+  const lastWeek = addDays(date, -7);
+  return getEndOfWeek(lastWeek);
+}
