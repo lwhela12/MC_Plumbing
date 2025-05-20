@@ -132,7 +132,7 @@ export class PgStorage implements IStorage {
     weekEndingDate.setDate(now.getDate() + (5 - now.getDay() + 7) % 7);
     
     return this.createPayroll({
-      weekEndingDate,
+      weekEndingDate: weekEndingDate.toISOString().split('T')[0],
       status: "draft",
     });
   }

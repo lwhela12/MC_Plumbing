@@ -1,6 +1,10 @@
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
+import { db } from "./db";
+import { sql } from "drizzle-orm";
+import { plumbers } from "@shared/schema";
+import { initializeDatabase } from "./initDb";
 
 const app = express();
 app.use(express.json());
@@ -37,6 +41,64 @@ app.use((req, res, next) => {
 });
 
 (async () => {
+  // If using PostgreSQL, perform migration
+  if (process.env.DATABASE_URL) {
+    try {
+      log("Migrating database schema...");
+      await db.execute(sql`CREATE TABLE IF NOT EXISTS _drizzle_migrations (
+        id SERIAL PRIMARY KEY,
+        hash text NOT NULL,
+        created_at timestamptz DEFAULT now()
+      )`);
+      
+      // Push schema changes to the database
+      await db.execute(sql`CREATE TABLE IF NOT EXISTS plumbers (
+        id SERIAL PRIMARY KEY,
+        name TEXT NOT NULL,
+        email TEXT NOT NULL,
+        phone TEXT NOT NULL,
+        commission_rate DOUBLE PRECISION NOT NULL,
+        is_active BOOLEAN NOT NULL DEFAULT true,
+        start_date DATE NOT NULL
+      )`);
+      
+      await db.execute(sql`CREATE TABLE IF NOT EXISTS payrolls (
+        id SERIAL PRIMARY KEY,
+        week_ending_date DATE NOT NULL,
+        status TEXT NOT NULL DEFAULT 'draft',
+        created_at TIMESTAMP NOT NULL DEFAULT now()
+      )`);
+      
+      await db.execute(sql`CREATE TABLE IF NOT EXISTS jobs (
+        id SERIAL PRIMARY KEY,
+        date DATE NOT NULL,
+        customer_name TEXT NOT NULL,
+        revenue DOUBLE PRECISION NOT NULL,
+        parts_cost DOUBLE PRECISION NOT NULL,
+        outside_labor DOUBLE PRECISION NOT NULL,
+        commission_amount DOUBLE PRECISION NOT NULL,
+        plumber_id INTEGER NOT NULL,
+        payroll_id INTEGER NOT NULL
+      )`);
+      
+      // Check if there's any data in the database
+      const plumbersCount = await db.select({ count: sql`count(*)` }).from(plumbers);
+      
+      if (plumbersCount[0].count === 0) {
+        // Database is empty, initialize with sample data
+        log("Database is empty, initializing with sample data...");
+        await initializeDatabase();
+      } else {
+        log("Database already contains data, skipping initialization.");
+      }
+      
+      log("Database setup complete!");
+    } catch (error) {
+      log(`Database migration error: ${error}`);
+      console.error("Database migration error:", error);
+    }
+  }
+  
   const server = await registerRoutes(app);
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
