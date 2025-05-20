@@ -82,11 +82,19 @@ app.use((req, res, next) => {
       )`);
       
       // Check if there's any data in the database
-      const plumbersCount = await db.select({ count: sql`count(*)` }).from(plumbers);
-      
-      // Force initialization of sample data for demo purposes
-      log("Initializing database with sample data...");
-      await initializeDatabase();
+      const plumbersCountResult = await db
+        .select({ count: sql<number>`count(*)` })
+        .from(plumbers);
+      const plumbersCount = Number(plumbersCountResult[0]?.count ?? 0);
+
+      // Only load the demo data when the database is empty so we don't
+      // create duplicate plumbers every time the server starts.
+      if (plumbersCount === 0) {
+        log("Initializing database with sample data...");
+        await initializeDatabase();
+      } else {
+        log(`Database already has ${plumbersCount} plumbers, skipping sample data load.`);
+      }
       
       log("Database setup complete!");
     } catch (error) {
