@@ -55,7 +55,7 @@ const RecentActivity: React.FC = () => {
       // Add payroll activities
       if (payrolls.length > 0) {
         activities.push({
-          id: payrolls[0].id,
+          id: payrolls[0].id * 100, // Using a multiplier to create a unique ID
           type: "payroll",
           message: "Generated weekly payroll report",
           date: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000), // a week ago
@@ -64,7 +64,7 @@ const RecentActivity: React.FC = () => {
         });
         
         activities.push({
-          id: payrolls[0].id,
+          id: payrolls[0].id * 100 + 1, // Adding 1 to ensure uniqueness
           type: "payroll",
           message: "Payroll finalized for previous week",
           date: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000), // a week ago
@@ -95,7 +95,7 @@ const RecentActivity: React.FC = () => {
       <div className="space-y-4">
         {activities && activities.length > 0 ? (
           activities.map((activity) => (
-            <div key={`${activity.type}-${activity.id}`} className="flex items-start">
+            <div key={`${activity.type}-${activity.id}-${activity.message}`} className="flex items-start">
               <div className={`p-2 rounded-full ${activity.iconClass} mr-3`}>
                 <span className="material-icons text-sm">{activity.icon}</span>
               </div>
