@@ -190,66 +190,63 @@ const WeeklyPayroll: React.FC = () => {
 
           <div className="col-span-1">
             <Label htmlFor="week-ending">Week Ending</Label>
-            <div className="flex flex-col gap-2">
-              <input
-                id="week-ending"
-                type="date"
-                value={
-                  payrollLoading || !currentPayroll
-                    ? ""
-                    : formatDateForInput(new Date(currentPayroll.weekEndingDate))
-                }
-                disabled={isPayrollReadOnly}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                onChange={(e) => {
-                  // Store the selected date temporarily
-                  if (currentPayroll && e.target.value) {
-                    const dateBtn = document.getElementById('update-date-btn');
-                    if (dateBtn) {
-                      dateBtn.setAttribute('data-date', e.target.value);
-                      dateBtn.style.display = 'block';
-                    }
+            <div className="flex flex-col space-y-2">
+              <div className="flex">
+                <input
+                  id="week-ending-input"
+                  type="date"
+                  value={
+                    payrollLoading || !currentPayroll
+                      ? ""
+                      : formatDateForInput(new Date(currentPayroll.weekEndingDate))
                   }
-                }}
-              />
-              <button
-                id="update-date-btn"
-                style={{ display: 'none' }}
-                className="self-start px-3 py-1 text-xs bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                onClick={async () => {
-                  const dateBtn = document.getElementById('update-date-btn');
-                  if (currentPayroll && dateBtn) {
-                    const newDate = dateBtn.getAttribute('data-date');
-                    if (newDate) {
-                      try {
-                        await apiRequest("PATCH", `/api/payrolls/${currentPayroll.id}`, {
-                          weekEndingDate: new Date(newDate).toISOString().split('T')[0]
-                        });
-                        
-                        // Invalidate all relevant queries
-                        await queryClient.invalidateQueries({ queryKey: ["/api/payrolls"] });
-                        await queryClient.invalidateQueries({ queryKey: ["/api/payrolls/current"] });
-                        
-                        toast({
-                          title: "Week ending date updated",
-                          variant: "default",
-                        });
-                        
-                        // Hide the button after successful update
-                        dateBtn.style.display = 'none';
-                      } catch (error) {
-                        console.error("Error updating date:", error);
-                        toast({
-                          title: "Failed to update week ending date",
-                          variant: "destructive",
-                        });
+                  disabled={isPayrollReadOnly}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-l-md bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+                {!isPayrollReadOnly && (
+                  <button
+                    type="button"
+                    className="px-3 py-2 bg-blue-600 text-white text-sm font-medium rounded-r-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    onClick={async () => {
+                      if (currentPayroll) {
+                        const dateInput = document.getElementById('week-ending-input') as HTMLInputElement;
+                        if (dateInput && dateInput.value) {
+                          try {
+                            const newDate = new Date(dateInput.value);
+                            
+                            // Build proper payload for the update
+                            const payload = {
+                              status: currentPayroll.status,
+                              weekEndingDate: newDate.toISOString().split('T')[0]
+                            };
+                            
+                            await apiRequest("PATCH", `/api/payrolls/${currentPayroll.id}`, payload);
+                            
+                            // Invalidate all relevant queries
+                            await Promise.all([
+                              queryClient.invalidateQueries({ queryKey: ["/api/payrolls"] }),
+                              queryClient.invalidateQueries({ queryKey: ["/api/payrolls/current"] })
+                            ]);
+                            
+                            toast({
+                              title: "Week ending date updated",
+                              variant: "default",
+                            });
+                          } catch (error) {
+                            console.error("Error updating date:", error);
+                            toast({
+                              title: "Failed to update week ending date",
+                              variant: "destructive",
+                            });
+                          }
+                        }
                       }
-                    }
-                  }
-                }}
-              >
-                Update Week Ending Date
-              </button>
+                    }}
+                  >
+                    Update
+                  </button>
+                )}
+              </div>
             </div>
           </div>
         </div>
