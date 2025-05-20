@@ -27,18 +27,36 @@ interface JobTableEntryProps {
   onJobsUpdated: () => void;
 }
 
+// Number of blank rows to show by default
+const DEFAULT_BLANK_ROWS = 5;
+
 const JobTableEntry: React.FC<JobTableEntryProps> = ({ payrollId, plumber, jobs, onJobsUpdated }) => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [rows, setRows] = useState<JobRow[]>([]);
   const [newRowCount, setNewRowCount] = useState(0);
 
-  // Initialize rows from existing jobs
+  // Function to create a new empty row
+  const createEmptyRow = (): JobRow => {
+    const today = new Date().toISOString().split('T')[0];
+    return {
+      date: today,
+      customerName: "",
+      revenue: "0",
+      partsCost: "0",
+      outsideLabor: "0",
+      isEditing: true,
+      isNew: true
+    };
+  };
+
+  // Initialize rows from existing jobs and add blank rows
   useEffect(() => {
     if (jobs) {
+      // Map existing jobs to row format
       const jobRows = jobs.map(job => ({
         id: job.id,
-        date: job.date instanceof Date ? job.date.toISOString().split('T')[0] : new Date(job.date).toISOString().split('T')[0],
+        date: new Date(job.date).toISOString().split('T')[0],
         customerName: job.customerName,
         revenue: job.revenue.toString(),
         partsCost: job.partsCost.toString(),
@@ -46,7 +64,18 @@ const JobTableEntry: React.FC<JobTableEntryProps> = ({ payrollId, plumber, jobs,
         isEditing: false,
         isNew: false
       }));
-      setRows(jobRows);
+      
+      // Add blank rows at the end
+      const blankRows = Array(DEFAULT_BLANK_ROWS).fill(0).map(() => createEmptyRow());
+      
+      // Set all rows
+      setRows([...jobRows, ...blankRows]);
+      setNewRowCount(DEFAULT_BLANK_ROWS);
+    } else {
+      // If no jobs exist, just create blank rows
+      const blankRows = Array(DEFAULT_BLANK_ROWS).fill(0).map(() => createEmptyRow());
+      setRows(blankRows);
+      setNewRowCount(DEFAULT_BLANK_ROWS);
     }
   }, [jobs]);
 
@@ -166,16 +195,7 @@ const JobTableEntry: React.FC<JobTableEntryProps> = ({ payrollId, plumber, jobs,
   };
 
   const addNewRow = () => {
-    const today = new Date().toISOString().split('T')[0];
-    const newRow: JobRow = {
-      date: today,
-      customerName: "",
-      revenue: "0",
-      partsCost: "0",
-      outsideLabor: "0",
-      isEditing: true,
-      isNew: true
-    };
+    const newRow = createEmptyRow();
     setRows([...rows, newRow]);
     setNewRowCount(prev => prev + 1);
   };
@@ -184,16 +204,26 @@ const JobTableEntry: React.FC<JobTableEntryProps> = ({ payrollId, plumber, jobs,
     const updatedRows = [...rows];
     updatedRows[index] = { ...updatedRows[index], [field]: value };
     setRows(updatedRows);
+    
+    // If this is the last blank row, add another blank row
+    if (index === rows.length - 1) {
+      addNewRow();
+    }
   };
 
   const handleSave = async (index: number) => {
     const row = rows[index];
     
+    // Skip empty rows
+    if (!row.customerName.trim()) {
+      return;
+    }
+    
     // Basic validation
-    if (!row.date || !row.customerName) {
+    if (!row.date) {
       toast({
         title: "Missing information",
-        description: "Please fill in all required fields",
+        description: "Please fill in a valid date",
         variant: "destructive",
       });
       return;
@@ -259,6 +289,9 @@ const JobTableEntry: React.FC<JobTableEntryProps> = ({ payrollId, plumber, jobs,
   const calculateTotals = () => {
     return rows.reduce(
       (acc, row) => {
+        // Skip blank rows from totals
+        if (!row.customerName.trim() && row.isNew) return acc;
+        
         acc.revenue += parseFloat(row.revenue) || 0;
         acc.partsCost += parseFloat(row.partsCost) || 0;
         acc.outsideLabor += parseFloat(row.outsideLabor) || 0;
@@ -277,185 +310,166 @@ const JobTableEntry: React.FC<JobTableEntryProps> = ({ payrollId, plumber, jobs,
         <h3 className="text-md font-medium">Jobs for {plumber.name}</h3>
         <Button onClick={addNewRow} size="sm">
           <Plus className="h-4 w-4 mr-1" />
-          Add Job Row
+          Add More Rows
         </Button>
       </div>
       
       <div className="overflow-x-auto">
         <table className="min-w-full bg-white border border-gray-200">
-          <thead className="bg-neutral-light">
+          <thead className="bg-gray-100">
             <tr>
-              <th className="px-4 py-2 text-left text-xs font-medium text-neutral-darker uppercase tracking-wider">
+              <th className="px-4 py-2 text-left text-xs font-medium text-gray-700 uppercase tracking-wider border-b">
                 Date
               </th>
-              <th className="px-4 py-2 text-left text-xs font-medium text-neutral-darker uppercase tracking-wider">
+              <th className="px-4 py-2 text-left text-xs font-medium text-gray-700 uppercase tracking-wider border-b">
                 Customer
               </th>
-              <th className="px-4 py-2 text-right text-xs font-medium text-neutral-darker uppercase tracking-wider">
+              <th className="px-4 py-2 text-right text-xs font-medium text-gray-700 uppercase tracking-wider border-b">
                 Revenue
               </th>
-              <th className="px-4 py-2 text-right text-xs font-medium text-neutral-darker uppercase tracking-wider">
+              <th className="px-4 py-2 text-right text-xs font-medium text-gray-700 uppercase tracking-wider border-b">
                 Parts Cost
               </th>
-              <th className="px-4 py-2 text-right text-xs font-medium text-neutral-darker uppercase tracking-wider">
+              <th className="px-4 py-2 text-right text-xs font-medium text-gray-700 uppercase tracking-wider border-b">
                 Outside Labor
               </th>
-              <th className="px-4 py-2 text-right text-xs font-medium text-neutral-darker uppercase tracking-wider">
+              <th className="px-4 py-2 text-right text-xs font-medium text-gray-700 uppercase tracking-wider border-b">
                 Commission
               </th>
-              <th className="px-4 py-2 text-center text-xs font-medium text-neutral-darker uppercase tracking-wider">
+              <th className="px-4 py-2 text-center text-xs font-medium text-gray-700 uppercase tracking-wider border-b">
                 Actions
               </th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-neutral">
-            {rows.length > 0 ? (
-              rows.map((row, index) => (
-                <tr key={row.id || `new-${index}`} className={row.isNew ? "bg-neutral-lightest" : "hover:bg-neutral-light"}>
-                  <td className="px-4 py-2 whitespace-nowrap">
-                    {row.isEditing ? (
-                      <Input
-                        type="date"
-                        value={row.date}
-                        onChange={(e) => handleChange(index, 'date', e.target.value)}
-                        className="w-full"
-                      />
-                    ) : (
-                      new Date(row.date).toLocaleDateString()
-                    )}
-                  </td>
-                  <td className="px-4 py-2 whitespace-nowrap">
-                    {row.isEditing ? (
-                      <Input
-                        type="text"
-                        value={row.customerName}
-                        onChange={(e) => handleChange(index, 'customerName', e.target.value)}
-                        className="w-full"
-                        placeholder="Customer name"
-                      />
-                    ) : (
-                      row.customerName
-                    )}
-                  </td>
-                  <td className="px-4 py-2 whitespace-nowrap text-right">
-                    {row.isEditing ? (
-                      <Input
-                        type="number"
-                        value={row.revenue}
-                        onChange={(e) => handleChange(index, 'revenue', e.target.value)}
-                        step="0.01"
-                        min="0"
-                        className="w-full text-right"
-                      />
-                    ) : (
-                      formatCurrency(parseFloat(row.revenue) || 0)
-                    )}
-                  </td>
-                  <td className="px-4 py-2 whitespace-nowrap text-right">
-                    {row.isEditing ? (
-                      <Input
-                        type="number"
-                        value={row.partsCost}
-                        onChange={(e) => handleChange(index, 'partsCost', e.target.value)}
-                        step="0.01"
-                        min="0"
-                        className="w-full text-right"
-                      />
-                    ) : (
-                      formatCurrency(parseFloat(row.partsCost) || 0)
-                    )}
-                  </td>
-                  <td className="px-4 py-2 whitespace-nowrap text-right">
-                    {row.isEditing ? (
-                      <Input
-                        type="number"
-                        value={row.outsideLabor}
-                        onChange={(e) => handleChange(index, 'outsideLabor', e.target.value)}
-                        step="0.01"
-                        min="0"
-                        className="w-full text-right"
-                      />
-                    ) : (
-                      formatCurrency(parseFloat(row.outsideLabor) || 0)
-                    )}
-                  </td>
-                  <td className="px-4 py-2 whitespace-nowrap text-right font-medium text-secondary">
-                    {formatCurrency(calculateRowCommission(row))}
-                  </td>
-                  <td className="px-4 py-2 whitespace-nowrap text-center">
-                    {row.isEditing ? (
-                      <div className="flex justify-center space-x-1">
-                        <Button 
-                          variant="ghost" 
-                          size="icon" 
-                          onClick={() => handleSave(index)}
-                          title="Save"
-                        >
-                          <Save className="h-4 w-4 text-green-600" />
-                        </Button>
-                        <Button 
-                          variant="ghost" 
-                          size="icon" 
-                          onClick={() => handleDelete(index)}
-                          title="Delete"
-                        >
-                          <X className="h-4 w-4 text-red-600" />
-                        </Button>
-                      </div>
-                    ) : (
+          <tbody className="divide-y divide-gray-200">
+            {rows.map((row, index) => (
+              <tr key={row.id || `new-${index}`} className={row.isNew ? "bg-gray-50" : "hover:bg-gray-50"}>
+                <td className="px-4 py-2 whitespace-nowrap">
+                  {row.isEditing ? (
+                    <Input
+                      type="date"
+                      value={row.date}
+                      onChange={(e) => handleChange(index, 'date', e.target.value)}
+                      className="w-full bg-white"
+                    />
+                  ) : (
+                    new Date(row.date).toLocaleDateString()
+                  )}
+                </td>
+                <td className="px-4 py-2 whitespace-nowrap">
+                  {row.isEditing ? (
+                    <Input
+                      type="text"
+                      value={row.customerName}
+                      onChange={(e) => handleChange(index, 'customerName', e.target.value)}
+                      className="w-full bg-white"
+                      placeholder="Customer name"
+                    />
+                  ) : (
+                    row.customerName
+                  )}
+                </td>
+                <td className="px-4 py-2 whitespace-nowrap text-right">
+                  {row.isEditing ? (
+                    <Input
+                      type="number"
+                      value={row.revenue}
+                      onChange={(e) => handleChange(index, 'revenue', e.target.value)}
+                      step="0.01"
+                      min="0"
+                      className="w-full text-right bg-white"
+                    />
+                  ) : (
+                    formatCurrency(parseFloat(row.revenue) || 0)
+                  )}
+                </td>
+                <td className="px-4 py-2 whitespace-nowrap text-right">
+                  {row.isEditing ? (
+                    <Input
+                      type="number"
+                      value={row.partsCost}
+                      onChange={(e) => handleChange(index, 'partsCost', e.target.value)}
+                      step="0.01"
+                      min="0"
+                      className="w-full text-right bg-white"
+                    />
+                  ) : (
+                    formatCurrency(parseFloat(row.partsCost) || 0)
+                  )}
+                </td>
+                <td className="px-4 py-2 whitespace-nowrap text-right">
+                  {row.isEditing ? (
+                    <Input
+                      type="number"
+                      value={row.outsideLabor}
+                      onChange={(e) => handleChange(index, 'outsideLabor', e.target.value)}
+                      step="0.01"
+                      min="0"
+                      className="w-full text-right bg-white"
+                    />
+                  ) : (
+                    formatCurrency(parseFloat(row.outsideLabor) || 0)
+                  )}
+                </td>
+                <td className="px-4 py-2 whitespace-nowrap text-right font-medium text-blue-600">
+                  {formatCurrency(calculateRowCommission(row))}
+                </td>
+                <td className="px-4 py-2 whitespace-nowrap text-center">
+                  {row.isEditing ? (
+                    <div className="flex justify-center space-x-1">
                       <Button 
                         variant="ghost" 
                         size="icon" 
-                        onClick={() => handleEdit(index)}
-                        title="Edit"
+                        onClick={() => handleSave(index)}
+                        title="Save"
                       >
-                        <span className="material-icons text-primary text-sm">edit</span>
+                        <Save className="h-4 w-4 text-green-600" />
                       </Button>
-                    )}
-                  </td>
-                </tr>
-              ))
-            ) : (
-              <tr>
-                <td colSpan={7} className="px-4 py-2 text-center text-neutral-dark">
-                  No jobs found. Add a new job row to get started.
+                      <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        onClick={() => handleDelete(index)}
+                        title="Delete"
+                      >
+                        <X className="h-4 w-4 text-red-600" />
+                      </Button>
+                    </div>
+                  ) : (
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      onClick={() => handleEdit(index)}
+                      title="Edit"
+                    >
+                      <span className="material-icons text-blue-600 text-sm">edit</span>
+                    </Button>
+                  )}
                 </td>
               </tr>
-            )}
+            ))}
           </tbody>
-          {rows.length > 0 && (
-            <tfoot className="bg-neutral-light">
-              <tr>
-                <td colSpan={2} className="px-4 py-2 whitespace-nowrap text-sm font-medium text-neutral-darker">
-                  Total
-                </td>
-                <td className="px-4 py-2 whitespace-nowrap text-sm text-right font-medium text-neutral-darker">
-                  {formatCurrency(totals.revenue)}
-                </td>
-                <td className="px-4 py-2 whitespace-nowrap text-sm text-right font-medium text-neutral-darker">
-                  {formatCurrency(totals.partsCost)}
-                </td>
-                <td className="px-4 py-2 whitespace-nowrap text-sm text-right font-medium text-neutral-darker">
-                  {formatCurrency(totals.outsideLabor)}
-                </td>
-                <td className="px-4 py-2 whitespace-nowrap text-sm text-right font-medium text-secondary">
-                  {formatCurrency(totals.commission)}
-                </td>
-                <td className="px-4 py-2 whitespace-nowrap"></td>
-              </tr>
-            </tfoot>
-          )}
+          <tfoot className="bg-gray-100">
+            <tr>
+              <td colSpan={2} className="px-4 py-2 whitespace-nowrap text-sm font-medium text-gray-700 border-t">
+                Total
+              </td>
+              <td className="px-4 py-2 whitespace-nowrap text-sm text-right font-medium text-gray-700 border-t">
+                {formatCurrency(totals.revenue)}
+              </td>
+              <td className="px-4 py-2 whitespace-nowrap text-sm text-right font-medium text-gray-700 border-t">
+                {formatCurrency(totals.partsCost)}
+              </td>
+              <td className="px-4 py-2 whitespace-nowrap text-sm text-right font-medium text-gray-700 border-t">
+                {formatCurrency(totals.outsideLabor)}
+              </td>
+              <td className="px-4 py-2 whitespace-nowrap text-sm text-right font-medium text-blue-600 border-t">
+                {formatCurrency(totals.commission)}
+              </td>
+              <td className="px-4 py-2 whitespace-nowrap border-t"></td>
+            </tr>
+          </tfoot>
         </table>
       </div>
-      
-      {rows.length === 0 && (
-        <div className="text-center mt-4">
-          <Button onClick={addNewRow} variant="outline">
-            <Plus className="h-4 w-4 mr-1" />
-            Add First Job
-          </Button>
-        </div>
-      )}
     </div>
   );
 };
