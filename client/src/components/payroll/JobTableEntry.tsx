@@ -276,6 +276,11 @@ const JobTableEntry: React.FC<JobTableEntryProps> = ({ payrollId, plumber, jobs,
     const partsCost = parseFloat(row.partsCost) || 0;
     const outsideLabor = parseFloat(row.outsideLabor) || 0;
     
+    // If all values are 0, return 0 to avoid showing commission on empty rows
+    if (revenue === 0 && partsCost === 0 && outsideLabor === 0 && row.isNew) {
+      return 0;
+    }
+    
     const { commissionAmount } = calculateCommission(
       revenue, 
       partsCost, 
@@ -358,12 +363,13 @@ const JobTableEntry: React.FC<JobTableEntryProps> = ({ payrollId, plumber, jobs,
                 </td>
                 <td className="px-4 py-2 whitespace-nowrap">
                   {row.isEditing ? (
-                    <Input
+                    <input
                       type="text"
                       value={row.customerName}
                       onChange={(e) => handleChange(index, 'customerName', e.target.value)}
-                      className="w-full bg-white"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       placeholder="Customer name"
+                      style={{ minWidth: '180px' }}
                     />
                   ) : (
                     row.customerName
@@ -371,42 +377,60 @@ const JobTableEntry: React.FC<JobTableEntryProps> = ({ payrollId, plumber, jobs,
                 </td>
                 <td className="px-4 py-2 whitespace-nowrap text-right">
                   {row.isEditing ? (
-                    <Input
-                      type="number"
-                      value={row.revenue}
-                      onChange={(e) => handleChange(index, 'revenue', e.target.value)}
-                      step="0.01"
-                      min="0"
-                      className="w-full text-right bg-white"
-                    />
+                    <div className="relative">
+                      <input
+                        type="text"
+                        inputMode="decimal"
+                        value={row.revenue}
+                        onChange={(e) => {
+                          // Only allow numbers and decimal point
+                          const value = e.target.value.replace(/[^0-9.]/g, '');
+                          handleChange(index, 'revenue', value);
+                        }}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md text-right bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        style={{ minWidth: '120px' }}
+                      />
+                    </div>
                   ) : (
                     formatCurrency(parseFloat(row.revenue) || 0)
                   )}
                 </td>
                 <td className="px-4 py-2 whitespace-nowrap text-right">
                   {row.isEditing ? (
-                    <Input
-                      type="number"
-                      value={row.partsCost}
-                      onChange={(e) => handleChange(index, 'partsCost', e.target.value)}
-                      step="0.01"
-                      min="0"
-                      className="w-full text-right bg-white"
-                    />
+                    <div className="relative">
+                      <input
+                        type="text"
+                        inputMode="decimal"
+                        value={row.partsCost}
+                        onChange={(e) => {
+                          // Only allow numbers and decimal point
+                          const value = e.target.value.replace(/[^0-9.]/g, '');
+                          handleChange(index, 'partsCost', value);
+                        }}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md text-right bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        style={{ minWidth: '120px' }}
+                      />
+                    </div>
                   ) : (
                     formatCurrency(parseFloat(row.partsCost) || 0)
                   )}
                 </td>
                 <td className="px-4 py-2 whitespace-nowrap text-right">
                   {row.isEditing ? (
-                    <Input
-                      type="number"
-                      value={row.outsideLabor}
-                      onChange={(e) => handleChange(index, 'outsideLabor', e.target.value)}
-                      step="0.01"
-                      min="0"
-                      className="w-full text-right bg-white"
-                    />
+                    <div className="relative">
+                      <input
+                        type="text"
+                        inputMode="decimal"
+                        value={row.outsideLabor}
+                        onChange={(e) => {
+                          // Only allow numbers and decimal point
+                          const value = e.target.value.replace(/[^0-9.]/g, '');
+                          handleChange(index, 'outsideLabor', value);
+                        }}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md text-right bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        style={{ minWidth: '120px' }}
+                      />
+                    </div>
                   ) : (
                     formatCurrency(parseFloat(row.outsideLabor) || 0)
                   )}
