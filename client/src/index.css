@@ -17,6 +17,30 @@
   #root {
     height: 100%;
   }
+  
+  /* Dropdown menu style overrides */
+  [data-radix-popper-content-wrapper] {
+    z-index: 999 !important;
+  }
+  
+  [role="listbox"] {
+    @apply bg-white border border-gray-200 shadow-lg rounded-md !important;
+    overflow: auto !important;
+    max-height: 250px !important;
+  }
+  
+  [role="option"] {
+    @apply px-3 py-2 text-gray-800 cursor-pointer !important;
+  }
+  
+  [role="option"]:hover,
+  [role="option"][data-highlighted] {
+    @apply bg-blue-100 text-blue-700 !important;
+  }
+  
+  [role="option"][data-state="checked"] {
+    @apply bg-blue-50 font-medium !important;
+  }
 }
 
 @layer components {
