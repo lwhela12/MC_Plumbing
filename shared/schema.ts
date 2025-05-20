@@ -61,10 +61,15 @@ export const payrolls = pgTable("payrolls", {
   createdAt: timestamp("created_at").notNull().default(sql`now()`),
 });
 
-export const insertPayrollSchema = createInsertSchema(payrolls).pick({
-  weekEndingDate: true,
-  status: true,
-});
+export const insertPayrollSchema = createInsertSchema(payrolls)
+  .pick({
+    weekEndingDate: true,
+    status: true,
+  })
+  // Allow string values that can be parsed as dates
+  .extend({
+    weekEndingDate: z.coerce.date(),
+  });
 
 export type InsertPayroll = z.infer<typeof insertPayrollSchema>;
 export type Payroll = typeof payrolls.$inferSelect;
