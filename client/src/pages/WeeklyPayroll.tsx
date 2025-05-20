@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { formatDateForInput } from "@/lib/dateUtils";
+import { formatDateForInput, getEndOfWeek } from "@/lib/dateUtils";
 import JobForm from "@/components/payroll/JobForm";
 import JobList from "@/components/payroll/JobList";
 import JobTableEntry from "@/components/payroll/JobTableEntry";
@@ -221,10 +221,25 @@ const WeeklyPayroll: React.FC = () => {
                         try {
                           setIsUpdatingDate(true);
                           
-                          // Build payload with both status and date to ensure complete update
+                          // Convert to Date and ensure it falls on a Friday
+                          const selectedDateObj = new Date(selectedDate);
+                          const fridayDate = getEndOfWeek(selectedDateObj);
+                          const fridayDateStr = formatDateForInput(fridayDate);
+                          
+                          // If the selected date is not a Friday, notify the user
+                          if (fridayDateStr !== selectedDate) {
+                            setSelectedDate(fridayDateStr);
+                            toast({
+                              title: "Date adjusted to Friday",
+                              description: "Week ending dates must fall on a Friday",
+                              variant: "default",
+                            });
+                          }
+                          
+                          // Build payload with both status and Friday date
                           const payload = {
                             status: currentPayroll.status,
-                            weekEndingDate: selectedDate
+                            weekEndingDate: fridayDateStr
                           };
                           
                           const result = await apiRequest("PATCH", `/api/payrolls/${currentPayroll.id}`, payload);
