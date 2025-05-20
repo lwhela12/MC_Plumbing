@@ -34,6 +34,8 @@ const WeeklyPayroll: React.FC = () => {
   const [entryMode, setEntryMode] = useState<'table' | 'individual'>('table');
   const [selectedPlumber, setSelectedPlumber] = useState<Plumber | null>(null);
   const [plumberJobs, setPlumberJobs] = useState<Job[]>([]);
+  const [selectedDate, setSelectedDate] = useState<string>("");
+  const [isUpdatingDate, setIsUpdatingDate] = useState(false);
 
   const { data: currentPayroll, isLoading: payrollLoading } = useQuery<Payroll>({
     queryKey: ["/api/payrolls/current"],
@@ -68,6 +70,13 @@ const WeeklyPayroll: React.FC = () => {
       setSelectedPlumber(null);
     }
   }, [plumbers, selectedPlumberId]);
+  
+  // Initialize selected date when payroll loads or changes
+  useEffect(() => {
+    if (currentPayroll) {
+      setSelectedDate(formatDateForInput(new Date(currentPayroll.weekEndingDate)));
+    }
+  }, [currentPayroll]);
 
   const finalizePayrollMutation = useMutation({
     mutationFn: async () => {
@@ -195,58 +204,61 @@ const WeeklyPayroll: React.FC = () => {
                 <input
                   id="week-ending-input"
                   type="date"
-                  value={
-                    payrollLoading || !currentPayroll
-                      ? ""
-                      : formatDateForInput(new Date(currentPayroll.weekEndingDate))
-                  }
-                  disabled={isPayrollReadOnly}
+                  value={selectedDate}
+                  onChange={(e) => setSelectedDate(e.target.value)}
+                  disabled={isPayrollReadOnly || isUpdatingDate}
                   className="w-full px-3 py-2 border border-gray-300 rounded-l-md bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
                 {!isPayrollReadOnly && (
                   <button
                     type="button"
-                    className="px-3 py-2 bg-blue-600 text-white text-sm font-medium rounded-r-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    disabled={isUpdatingDate}
+                    className={`px-3 py-2 text-white text-sm font-medium rounded-r-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                      isUpdatingDate ? 'bg-blue-400' : 'bg-blue-600 hover:bg-blue-700'
+                    }`}
                     onClick={async () => {
-                      if (currentPayroll) {
-                        const dateInput = document.getElementById('week-ending-input') as HTMLInputElement;
-                        if (dateInput && dateInput.value) {
-                          try {
-                            const newDate = new Date(dateInput.value);
-                            
-                            // Build proper payload for the update
-                            const payload = {
-                              status: currentPayroll.status,
-                              weekEndingDate: newDate.toISOString().split('T')[0]
-                            };
-                            
-                            await apiRequest("PATCH", `/api/payrolls/${currentPayroll.id}`, payload);
-                            
-                            // Invalidate all relevant queries
-                            await Promise.all([
-                              queryClient.invalidateQueries({ queryKey: ["/api/payrolls"] }),
-                              queryClient.invalidateQueries({ queryKey: ["/api/payrolls/current"] })
-                            ]);
-                            
-                            toast({
-                              title: "Week ending date updated",
-                              variant: "default",
-                            });
-                          } catch (error) {
-                            console.error("Error updating date:", error);
-                            toast({
-                              title: "Failed to update week ending date",
-                              variant: "destructive",
-                            });
-                          }
+                      if (currentPayroll && selectedDate) {
+                        try {
+                          setIsUpdatingDate(true);
+                          
+                          // Build payload with both status and date to ensure complete update
+                          const payload = {
+                            status: currentPayroll.status,
+                            weekEndingDate: selectedDate
+                          };
+                          
+                          const result = await apiRequest("PATCH", `/api/payrolls/${currentPayroll.id}`, payload);
+                          console.log("Update response:", result);
+                          
+                          // Force a complete invalidation and refetch
+                          await queryClient.invalidateQueries();
+                          
+                          toast({
+                            title: "Week ending date updated successfully",
+                            variant: "default",
+                          });
+                        } catch (error) {
+                          console.error("Error updating date:", error);
+                          toast({
+                            title: "Failed to update week ending date",
+                            description: "Please try again",
+                            variant: "destructive",
+                          });
+                        } finally {
+                          setIsUpdatingDate(false);
                         }
                       }
                     }}
                   >
-                    Update
+                    {isUpdatingDate ? 'Updating...' : 'Update'}
                   </button>
                 )}
               </div>
+              {selectedDate !== (currentPayroll ? formatDateForInput(new Date(currentPayroll.weekEndingDate)) : "") && (
+                <p className="text-xs text-amber-600">
+                  Date change not saved. Click Update to apply.
+                </p>
+              )}
             </div>
           </div>
         </div>
