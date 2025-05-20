@@ -84,13 +84,9 @@ app.use((req, res, next) => {
       // Check if there's any data in the database
       const plumbersCount = await db.select({ count: sql`count(*)` }).from(plumbers);
       
-      if (plumbersCount[0].count === 0) {
-        // Database is empty, initialize with sample data
-        log("Database is empty, initializing with sample data...");
-        await initializeDatabase();
-      } else {
-        log("Database already contains data, skipping initialization.");
-      }
+      // Force initialization of sample data for demo purposes
+      log("Initializing database with sample data...");
+      await initializeDatabase();
       
       log("Database setup complete!");
     } catch (error) {
