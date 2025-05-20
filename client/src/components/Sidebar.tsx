@@ -30,28 +30,24 @@ const Sidebar: React.FC<SidebarProps> = ({ onClose }) => {
 
   return (
     <>
-      <div className="flex items-center justify-center h-16 px-4 bg-primary text-white">
-        <h1 className="text-xl font-medium">MC Plumbing Admin</h1>
+      <div className="flex items-center justify-between h-16 px-4 bg-sidebar-primary">
+        <h1 className="text-xl font-bold text-sidebar-primary-foreground">MC Plumbing</h1>
       </div>
-      <nav className="flex-1 px-2 py-4 bg-white">
+      <nav className="flex-1 px-3 py-4 bg-sidebar-background overflow-y-auto">
         {Object.entries(navItemGroups).map(([group, items]) => (
           <div key={group} className="mb-6">
-            <h2 className="px-4 text-xs font-semibold text-neutral-dark uppercase tracking-wider">
+            <h2 className="px-2 mb-2 text-xs font-semibold uppercase tracking-wider text-sidebar-foreground/70">
               {group}
             </h2>
-            <div className="mt-2">
+            <div className="space-y-1">
               {items.map((item) => (
                 <Link
                   key={item.path}
                   href={item.path}
                   onClick={onClose}
-                  className={`group flex items-center px-4 py-2 text-sm font-medium rounded-md ${
-                    isActive(item.path)
-                      ? "text-white bg-primary"
-                      : "text-neutral-darker hover:text-primary hover:bg-neutral-light"
-                  }`}
+                  className={`sidebar-item ${isActive(item.path) ? "active" : ""}`}
                 >
-                  <span className={`material-icons mr-3 ${isActive(item.path) ? "text-white" : "text-neutral-dark"}`}>
+                  <span className="material-icons text-[20px]">
                     {item.icon}
                   </span>
                   {item.label}
