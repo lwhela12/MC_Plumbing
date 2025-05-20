@@ -26,7 +26,7 @@ const JobTableDialog: React.FC<Props> = ({ open, onOpenChange, payrollId, plumbe
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-screen-lg h-[90vh] overflow-auto">
+      <DialogContent className="max-w-screen-lg h-[90vh] overflow-auto bg-white border-none">
         <DialogHeader>
           <DialogTitle>Jobs for {plumber.name}</DialogTitle>
         </DialogHeader>
