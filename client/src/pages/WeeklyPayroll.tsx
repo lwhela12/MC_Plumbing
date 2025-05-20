@@ -190,36 +190,67 @@ const WeeklyPayroll: React.FC = () => {
 
           <div className="col-span-1">
             <Label htmlFor="week-ending">Week Ending</Label>
-            <input
-              id="week-ending"
-              type="date"
-              value={
-                payrollLoading || !currentPayroll
-                  ? ""
-                  : formatDateForInput(new Date(currentPayroll.weekEndingDate))
-              }
-              disabled={isPayrollReadOnly}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              onChange={async (e) => {
-                if (currentPayroll) {
-                  try {
-                    await apiRequest("PATCH", `/api/payrolls/${currentPayroll.id}`, {
-                      weekEndingDate: new Date(e.target.value),
-                    });
-                    await queryClient.invalidateQueries({ queryKey: ["/api/payrolls"] });
-                    toast({
-                      title: "Week ending date updated",
-                      variant: "default",
-                    });
-                  } catch (error) {
-                    toast({
-                      title: "Failed to update week ending date",
-                      variant: "destructive",
-                    });
-                  }
+            <div className="flex flex-col gap-2">
+              <input
+                id="week-ending"
+                type="date"
+                value={
+                  payrollLoading || !currentPayroll
+                    ? ""
+                    : formatDateForInput(new Date(currentPayroll.weekEndingDate))
                 }
-              }}
-            />
+                disabled={isPayrollReadOnly}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                onChange={(e) => {
+                  // Store the selected date temporarily
+                  if (currentPayroll && e.target.value) {
+                    const dateBtn = document.getElementById('update-date-btn');
+                    if (dateBtn) {
+                      dateBtn.setAttribute('data-date', e.target.value);
+                      dateBtn.style.display = 'block';
+                    }
+                  }
+                }}
+              />
+              <button
+                id="update-date-btn"
+                style={{ display: 'none' }}
+                className="self-start px-3 py-1 text-xs bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                onClick={async () => {
+                  const dateBtn = document.getElementById('update-date-btn');
+                  if (currentPayroll && dateBtn) {
+                    const newDate = dateBtn.getAttribute('data-date');
+                    if (newDate) {
+                      try {
+                        await apiRequest("PATCH", `/api/payrolls/${currentPayroll.id}`, {
+                          weekEndingDate: new Date(newDate).toISOString().split('T')[0]
+                        });
+                        
+                        // Invalidate all relevant queries
+                        await queryClient.invalidateQueries({ queryKey: ["/api/payrolls"] });
+                        await queryClient.invalidateQueries({ queryKey: ["/api/payrolls/current"] });
+                        
+                        toast({
+                          title: "Week ending date updated",
+                          variant: "default",
+                        });
+                        
+                        // Hide the button after successful update
+                        dateBtn.style.display = 'none';
+                      } catch (error) {
+                        console.error("Error updating date:", error);
+                        toast({
+                          title: "Failed to update week ending date",
+                          variant: "destructive",
+                        });
+                      }
+                    }
+                  }
+                }}
+              >
+                Update Week Ending Date
+              </button>
+            </div>
           </div>
         </div>
       </div>
