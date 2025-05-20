@@ -128,16 +128,16 @@ export class PgStorage implements IStorage {
     
     // If no draft payrolls exist, create a new one
     const now = new Date();
-    const weekEndingDate = new Date(now);
-    weekEndingDate.setDate(now.getDate() + (5 - now.getDay() + 7) % 7);
+    // No date adjustment - use the current date
     
     return this.createPayroll({
-      weekEndingDate: weekEndingDate.toISOString().split('T')[0],
+      weekEndingDate: now.toISOString().split('T')[0],
       status: "draft",
     });
   }
 
   async getPayrollByDate(weekEndingDate: Date): Promise<Payroll | undefined> {
+    // Format the date without any adjustment
     const formattedDate = weekEndingDate.toISOString().split('T')[0];
     
     const results = await db.select()
