@@ -6,7 +6,12 @@ import { DATE_FORMATS } from "./constants";
  */
 export function formatDateForDisplay(date: Date | string | undefined): string {
   if (!date) return "";
-  const dateObj = typeof date === "string" ? new Date(date) : date;
+  let dateObj: Date;
+  if (typeof date === "string") {
+    dateObj = parse(date, DATE_FORMATS.INPUT, new Date());
+  } else {
+    dateObj = date;
+  }
   if (!isValid(dateObj)) return "";
   return format(dateObj, DATE_FORMATS.DISPLAY);
 }
@@ -16,7 +21,12 @@ export function formatDateForDisplay(date: Date | string | undefined): string {
  */
 export function formatDateWithWeekday(date: Date | string | undefined): string {
   if (!date) return "";
-  const dateObj = typeof date === "string" ? new Date(date) : date;
+  let dateObj: Date;
+  if (typeof date === "string") {
+    dateObj = parse(date, DATE_FORMATS.INPUT, new Date());
+  } else {
+    dateObj = date;
+  }
   if (!isValid(dateObj)) return "";
   return format(dateObj, DATE_FORMATS.DISPLAY_WITH_WEEKDAY);
 }
@@ -26,7 +36,12 @@ export function formatDateWithWeekday(date: Date | string | undefined): string {
  */
 export function formatDateForInput(date: Date | string | undefined): string {
   if (!date) return "";
-  const dateObj = typeof date === "string" ? new Date(date) : date;
+  let dateObj: Date;
+  if (typeof date === "string") {
+    dateObj = parse(date, DATE_FORMATS.INPUT, new Date());
+  } else {
+    dateObj = date;
+  }
   if (!isValid(dateObj)) return "";
   return format(dateObj, DATE_FORMATS.INPUT);
 }
@@ -35,7 +50,12 @@ export function formatDateForInput(date: Date | string | undefined): string {
  * Format a date for API requests
  */
 export function formatDateForAPI(date: Date | string): string {
-  const dateObj = typeof date === "string" ? new Date(date) : date;
+  let dateObj: Date;
+  if (typeof date === "string") {
+    dateObj = parse(date, DATE_FORMATS.INPUT, new Date());
+  } else {
+    dateObj = date;
+  }
   if (!isValid(dateObj)) throw new Error("Invalid date");
   return format(dateObj, DATE_FORMATS.API);
 }
@@ -73,7 +93,12 @@ export function parseInputDate(dateString: string): Date | null {
  */
 export function formatDateDisplay(date: Date | string | undefined): string {
   if (!date) return "";
-  const dateObj = typeof date === "string" ? new Date(date) : date;
+  let dateObj: Date;
+  if (typeof date === "string") {
+    dateObj = parse(date, DATE_FORMATS.INPUT, new Date());
+  } else {
+    dateObj = date;
+  }
   if (!isValid(dateObj)) return "";
   return format(dateObj, "MM/dd/yyyy");
 }

@@ -74,7 +74,7 @@ const WeeklyPayroll: React.FC = () => {
   // Initialize selected date when payroll loads or changes
   useEffect(() => {
     if (currentPayroll) {
-      setSelectedDate(formatDateForInput(new Date(currentPayroll.weekEndingDate)));
+      setSelectedDate(formatDateForInput(currentPayroll.weekEndingDate));
     }
   }, [currentPayroll]);
 
@@ -256,7 +256,7 @@ const WeeklyPayroll: React.FC = () => {
                   </button>
                 )}
               </div>
-              {selectedDate !== (currentPayroll ? formatDateForInput(new Date(currentPayroll.weekEndingDate)) : "") && (
+              {selectedDate !== (currentPayroll ? formatDateForInput(currentPayroll.weekEndingDate) : "") && (
                 <p className="text-xs text-amber-600">
                   Date change not saved. Click Update to apply.
                 </p>
