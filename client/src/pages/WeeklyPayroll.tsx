@@ -160,22 +160,22 @@ const WeeklyPayroll: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="col-span-1">
             <Label htmlFor="plumber">Plumber</Label>
-            <Select
-              disabled={plumbersLoading || isPayrollReadOnly}
-              onValueChange={(value) => setSelectedPlumberId(parseInt(value))}
-              value={selectedPlumberId?.toString()}
-            >
-              <SelectTrigger id="plumber">
-                <SelectValue placeholder="Select a plumber" />
-              </SelectTrigger>
-              <SelectContent>
+            <div className="relative">
+              <select
+                disabled={plumbersLoading || isPayrollReadOnly}
+                onChange={(e) => setSelectedPlumberId(parseInt(e.target.value))}
+                value={selectedPlumberId?.toString() || ""}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                id="plumber"
+              >
+                <option value="" disabled>Select a plumber</option>
                 {plumbers?.map((plumber) => (
-                  <SelectItem key={plumber.id} value={plumber.id.toString()}>
+                  <option key={plumber.id} value={plumber.id.toString()}>
                     {plumber.name}
-                  </SelectItem>
+                  </option>
                 ))}
-              </SelectContent>
-            </Select>
+              </select>
+            </div>
           </div>
 
           <div className="col-span-1">
@@ -190,7 +190,7 @@ const WeeklyPayroll: React.FC = () => {
 
           <div className="col-span-1">
             <Label htmlFor="week-ending">Week Ending</Label>
-            <Input
+            <input
               id="week-ending"
               type="date"
               value={
@@ -198,7 +198,8 @@ const WeeklyPayroll: React.FC = () => {
                   ? ""
                   : formatDateForInput(new Date(currentPayroll.weekEndingDate))
               }
-              readOnly={isPayrollReadOnly}
+              disabled={isPayrollReadOnly}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               onChange={async (e) => {
                 if (currentPayroll) {
                   try {
@@ -206,6 +207,10 @@ const WeeklyPayroll: React.FC = () => {
                       weekEndingDate: new Date(e.target.value),
                     });
                     await queryClient.invalidateQueries({ queryKey: ["/api/payrolls"] });
+                    toast({
+                      title: "Week ending date updated",
+                      variant: "default",
+                    });
                   } catch (error) {
                     toast({
                       title: "Failed to update week ending date",

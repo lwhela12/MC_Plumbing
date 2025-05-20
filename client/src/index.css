@@ -26,7 +26,8 @@
   [role="listbox"] {
     @apply bg-white border border-gray-200 shadow-lg rounded-md !important;
     overflow: auto !important;
-    max-height: 250px !important;
+    max-height: 300px !important;
+    min-width: 100% !important;
   }
   
   [role="option"] {
