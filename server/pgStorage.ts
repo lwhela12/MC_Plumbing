@@ -142,7 +142,7 @@ export class PgStorage implements IStorage {
     
     const results = await db.select()
       .from(payrolls)
-      .where(eq(payrolls.weekEndingDate, formattedDate as any));
+      .where(eq(payrolls.weekEndingDate, formattedDate));
     
     return results.length ? results[0] : undefined;
   }
