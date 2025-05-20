@@ -221,25 +221,12 @@ const WeeklyPayroll: React.FC = () => {
                         try {
                           setIsUpdatingDate(true);
                           
-                          // Convert to Date and ensure it falls on a Friday
-                          const selectedDateObj = new Date(selectedDate);
-                          const fridayDate = getEndOfWeek(selectedDateObj);
-                          const fridayDateStr = formatDateForInput(fridayDate);
+                          // Use the exact date the user selected without adjustment
                           
-                          // If the selected date is not a Friday, notify the user
-                          if (fridayDateStr !== selectedDate) {
-                            setSelectedDate(fridayDateStr);
-                            toast({
-                              title: "Date adjusted to Friday",
-                              description: "Week ending dates must fall on a Friday",
-                              variant: "default",
-                            });
-                          }
-                          
-                          // Build payload with both status and Friday date
+                          // Build payload with both status and selected date
                           const payload = {
                             status: currentPayroll.status,
-                            weekEndingDate: fridayDateStr
+                            weekEndingDate: selectedDate
                           };
                           
                           const result = await apiRequest("PATCH", `/api/payrolls/${currentPayroll.id}`, payload);
