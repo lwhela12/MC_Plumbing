@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Plumber, Job, Payroll } from "@shared/schema";
 import { apiRequest } from "@/lib/queryClient";
@@ -10,6 +10,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { formatDateForInput } from "@/lib/dateUtils";
 import JobForm from "@/components/payroll/JobForm";
 import JobList from "@/components/payroll/JobList";
+import JobTableEntry from "@/components/payroll/JobTableEntry";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Plus } from "lucide-react";
 import {
   AlertDialog,
@@ -29,6 +31,9 @@ const WeeklyPayroll: React.FC = () => {
   const [selectedPlumberId, setSelectedPlumberId] = useState<number | null>(null);
   const [showJobForm, setShowJobForm] = useState(false);
   const [editingJob, setEditingJob] = useState<Job | null>(null);
+  const [entryMode, setEntryMode] = useState<'table' | 'individual'>('table');
+  const [selectedPlumber, setSelectedPlumber] = useState<Plumber | null>(null);
+  const [plumberJobs, setPlumberJobs] = useState<Job[]>([]);
 
   const { data: currentPayroll, isLoading: payrollLoading } = useQuery<Payroll>({
     queryKey: ["/api/payrolls/current"],
@@ -37,6 +42,32 @@ const WeeklyPayroll: React.FC = () => {
   const { data: plumbers, isLoading: plumbersLoading } = useQuery<Plumber[]>({
     queryKey: ["/api/plumbers/active"],
   });
+
+  const { data: jobs, isLoading: jobsLoading } = useQuery<Job[]>({
+    queryKey: ["/api/jobs"],
+  });
+
+  // Get jobs for selected plumber
+  useEffect(() => {
+    if (jobs && selectedPlumberId && currentPayroll) {
+      const filteredJobs = jobs.filter(
+        job => job.plumberId === selectedPlumberId && job.payrollId === currentPayroll.id
+      );
+      setPlumberJobs(filteredJobs);
+    } else {
+      setPlumberJobs([]);
+    }
+  }, [jobs, selectedPlumberId, currentPayroll]);
+
+  // Update selected plumber when plumber ID changes
+  useEffect(() => {
+    if (plumbers && selectedPlumberId) {
+      const plumber = plumbers.find(p => p.id === selectedPlumberId);
+      setSelectedPlumber(plumber || null);
+    } else {
+      setSelectedPlumber(null);
+    }
+  }, [plumbers, selectedPlumberId]);
 
   const finalizePayrollMutation = useMutation({
     mutationFn: async () => {
@@ -110,6 +141,12 @@ const WeeklyPayroll: React.FC = () => {
     return plumber ? `${plumber.commissionRate}%` : "0%";
   };
 
+  const handleJobsUpdated = async () => {
+    await queryClient.invalidateQueries({ queryKey: ["/api/jobs"] });
+  };
+
+  const isPayrollReadOnly = !currentPayroll || currentPayroll.status === "finalized";
+
   return (
     <div className="flex-1 overflow-auto p-6">
       <div className="mb-6">
@@ -124,7 +161,7 @@ const WeeklyPayroll: React.FC = () => {
           <div className="col-span-1">
             <Label htmlFor="plumber">Plumber</Label>
             <Select
-              disabled={plumbersLoading}
+              disabled={plumbersLoading || isPayrollReadOnly}
               onValueChange={(value) => setSelectedPlumberId(parseInt(value))}
               value={selectedPlumberId?.toString()}
             >
@@ -161,7 +198,7 @@ const WeeklyPayroll: React.FC = () => {
                   ? ""
                   : formatDateForInput(new Date(currentPayroll.weekEndingDate))
               }
-              readOnly={currentPayroll?.status === "finalized"}
+              readOnly={isPayrollReadOnly}
               onChange={async (e) => {
                 if (currentPayroll) {
                   try {
@@ -182,36 +219,68 @@ const WeeklyPayroll: React.FC = () => {
         </div>
       </div>
 
-      {/* Job Entry Card */}
+      {/* Job Entry Tabs */}
       <div className="bg-white rounded-lg shadow-card p-6 mb-6">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-lg font-medium text-neutral-darker">Enter Job Details</h2>
-          <Button
-            onClick={handleAddJob}
-            disabled={!currentPayroll || currentPayroll.status === "finalized"}
-          >
-            <Plus className="h-4 w-4 mr-1" />
-            Add Job
-          </Button>
+          <Tabs defaultValue="table" onValueChange={(v) => setEntryMode(v as 'table' | 'individual')}>
+            <TabsList>
+              <TabsTrigger value="table">Table Entry</TabsTrigger>
+              <TabsTrigger value="individual">Individual Entry</TabsTrigger>
+            </TabsList>
+          </Tabs>
         </div>
 
-        {/* Job Entry Form */}
-        {showJobForm && currentPayroll && (
-          <JobForm
-            job={editingJob || undefined}
-            payrollId={currentPayroll.id}
-            onSuccess={handleJobFormSuccess}
-            onCancel={handleJobFormCancel}
-          />
+        {/* Table Entry Mode */}
+        {entryMode === 'table' && (
+          <>
+            {selectedPlumber && currentPayroll ? (
+              <JobTableEntry 
+                payrollId={currentPayroll.id}
+                plumber={selectedPlumber}
+                jobs={plumberJobs}
+                onJobsUpdated={handleJobsUpdated}
+              />
+            ) : (
+              <div className="text-center py-8 text-neutral-dark">
+                Please select a plumber to enter jobs
+              </div>
+            )}
+          </>
         )}
 
-        {/* Job List */}
-        {currentPayroll && (
-          <JobList
-            payrollId={currentPayroll.id}
-            plumberId={selectedPlumberId || undefined}
-            onEditJob={handleEditJob}
-          />
+        {/* Individual Entry Mode */}
+        {entryMode === 'individual' && (
+          <>
+            <div className="flex justify-end mb-4">
+              <Button
+                onClick={handleAddJob}
+                disabled={isPayrollReadOnly}
+              >
+                <Plus className="h-4 w-4 mr-1" />
+                Add Job
+              </Button>
+            </div>
+
+            {/* Job Entry Form */}
+            {showJobForm && currentPayroll && (
+              <JobForm
+                job={editingJob || undefined}
+                payrollId={currentPayroll.id}
+                onSuccess={handleJobFormSuccess}
+                onCancel={handleJobFormCancel}
+              />
+            )}
+
+            {/* Job List */}
+            {currentPayroll && (
+              <JobList
+                payrollId={currentPayroll.id}
+                plumberId={selectedPlumberId || undefined}
+                onEditJob={handleEditJob}
+              />
+            )}
+          </>
         )}
       </div>
 
