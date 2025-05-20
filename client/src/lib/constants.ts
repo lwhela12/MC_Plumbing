@@ -17,7 +17,7 @@ export const DATE_FORMATS = {
   DISPLAY: "MMM d, yyyy",
   DISPLAY_WITH_WEEKDAY: "EEE, MMM d, yyyy",
   INPUT: "yyyy-MM-dd",
-  API: "yyyy-MM-dd'T'HH:mm:ss.SSSxxx"
+  API: "yyyy-MM-dd" // Simplified to use only the date portion without time/timezone
 } as const;
 
 // Report types
