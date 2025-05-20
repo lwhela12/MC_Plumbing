@@ -11,6 +11,7 @@ import { formatDateForInput, getEndOfWeek } from "@/lib/dateUtils";
 import JobForm from "@/components/payroll/JobForm";
 import JobList from "@/components/payroll/JobList";
 import JobTableEntry from "@/components/payroll/JobTableEntry";
+import JobTableDialog from "@/components/payroll/JobTableDialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Plus } from "lucide-react";
 import {
@@ -36,6 +37,7 @@ const WeeklyPayroll: React.FC = () => {
   const [plumberJobs, setPlumberJobs] = useState<Job[]>([]);
   const [selectedDate, setSelectedDate] = useState<string>("");
   const [isUpdatingDate, setIsUpdatingDate] = useState(false);
+  const [tableDialogOpen, setTableDialogOpen] = useState(false);
 
   const { data: currentPayroll, isLoading: payrollLoading } = useQuery<Payroll>({
     queryKey: ["/api/payrolls/current"],
@@ -282,12 +284,9 @@ const WeeklyPayroll: React.FC = () => {
         {entryMode === 'table' && (
           <>
             {selectedPlumber && currentPayroll ? (
-              <JobTableEntry 
-                payrollId={currentPayroll.id}
-                plumber={selectedPlumber}
-                jobs={plumberJobs}
-                onJobsUpdated={handleJobsUpdated}
-              />
+              <div className="text-center">
+                <Button onClick={() => setTableDialogOpen(true)}>Open Table</Button>
+              </div>
             ) : (
               <div className="text-center py-8 text-neutral-dark">
                 Please select a plumber to enter jobs
@@ -357,6 +356,17 @@ const WeeklyPayroll: React.FC = () => {
             </AlertDialogContent>
           </AlertDialog>
         </div>
+      )}
+
+      {selectedPlumber && currentPayroll && (
+        <JobTableDialog
+          open={tableDialogOpen}
+          onOpenChange={setTableDialogOpen}
+          payrollId={currentPayroll.id}
+          plumber={selectedPlumber}
+          jobs={plumberJobs}
+          onJobsUpdated={handleJobsUpdated}
+        />
       )}
     </div>
   );

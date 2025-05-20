@@ -147,6 +147,15 @@ export class PgStorage implements IStorage {
     return results.length ? results[0] : undefined;
   }
 
+  async getLatestFinalizedPayroll(): Promise<Payroll | undefined> {
+    const results = await db.select()
+      .from(payrolls)
+      .where(eq(payrolls.status, "finalized"))
+      .orderBy(desc(payrolls.weekEndingDate))
+      .limit(1);
+    return results.length ? results[0] : undefined;
+  }
+
   async createPayroll(payroll: InsertPayroll): Promise<Payroll> {
     const results = await db.insert(payrolls)
       .values({

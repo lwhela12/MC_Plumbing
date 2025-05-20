@@ -29,6 +29,7 @@ export interface IStorage {
   getPayroll(id: number): Promise<Payroll | undefined>;
   getCurrentPayroll(): Promise<Payroll>;
   getPayrollByDate(weekEndingDate: Date): Promise<Payroll | undefined>;
+  getLatestFinalizedPayroll(): Promise<Payroll | undefined>;
   createPayroll(payroll: InsertPayroll): Promise<Payroll>;
   updatePayroll(id: number, payroll: UpdatePayroll): Promise<Payroll | undefined>;
   deletePayroll(id: number): Promise<boolean>;
@@ -58,97 +59,19 @@ export class MemStorage implements IStorage {
   }
 
   private initializeData() {
-    // Create some initial plumbers
-    const plumbers: InsertPlumber[] = [
-      {
-        name: "John Smith",
-        email: "john.smith@example.com",
-        phone: "555-123-4567",
-        commissionRate: 30,
-        isActive: true,
-        startDate: new Date("2022-01-01"),
-      },
-      {
-        name: "Michael Johnson",
-        email: "michael.j@example.com",
-        phone: "555-234-5678",
-        commissionRate: 30,
-        isActive: true,
-        startDate: new Date("2022-02-15"),
-      },
-      {
-        name: "David Wilson",
-        email: "david.w@example.com",
-        phone: "555-345-6789",
-        commissionRate: 30,
-        isActive: true,
-        startDate: new Date("2022-03-10"),
-      },
-      {
-        name: "Robert Brown",
-        email: "robert.b@example.com",
-        phone: "555-456-7890",
-        commissionRate: 25,
-        isActive: false,
-        startDate: new Date("2022-04-05"),
-      },
-    ];
+    // Initial plumber - Lucas Whelan
+    const initialPlumber: InsertPlumber = {
+      name: "Lucas Whelan",
+      email: "lucas@example.com",
+      phone: "555-000-0000",
+      commissionRate: 30,
+      isActive: true,
+      startDate: new Date(),
+    };
 
-    plumbers.forEach(plumber => this.createPlumber(plumber));
+    this.createPlumber(initialPlumber);
 
-    // Create current payroll
-    const now = new Date();
-    const weekEndingDate = new Date(now);
-    weekEndingDate.setDate(now.getDate() + (5 - now.getDay() + 7) % 7);
-    this.createPayroll({
-      weekEndingDate,
-      status: "draft",
-    });
-
-    // Create sample jobs
-    const jobs: Omit<InsertJob, "payrollId">[] = [
-      {
-        date: new Date("2023-05-08"),
-        customerName: "Johnson Residence",
-        revenue: 850.00,
-        partsCost: 250.00,
-        outsideLabor: 100.00,
-        commissionAmount: 153.75,
-        plumberId: 1,
-      },
-      {
-        date: new Date("2023-05-09"),
-        customerName: "Smith Office Building",
-        revenue: 1200.00,
-        partsCost: 350.00,
-        outsideLabor: 0.00,
-        commissionAmount: 268.75,
-        plumberId: 1,
-      },
-      {
-        date: new Date("2023-05-08"),
-        customerName: "Adams Home",
-        revenue: 750.00,
-        partsCost: 200.00,
-        outsideLabor: 50.00,
-        commissionAmount: 168.75,
-        plumberId: 2,
-      },
-      {
-        date: new Date("2023-05-10"),
-        customerName: "Wilson Apartment",
-        revenue: 550.00,
-        partsCost: 150.00,
-        outsideLabor: 0.00,
-        commissionAmount: 131.25,
-        plumberId: 3,
-      },
-    ];
-
-    jobs.forEach(job => this.createJob({
-      ...job,
-      payrollId: 1,
-    }));
+    // No initial payrolls or jobs. A draft payroll will be created on demand
   }
 
   // Plumber operations
@@ -273,9 +196,17 @@ export class MemStorage implements IStorage {
 
   async getPayrollByDate(weekEndingDate: Date): Promise<Payroll | undefined> {
     return Array.from(this.payrolls.values()).find(
-      payroll => new Date(payroll.weekEndingDate).toISOString().split('T')[0] === 
+      payroll => new Date(payroll.weekEndingDate).toISOString().split('T')[0] ===
                  new Date(weekEndingDate).toISOString().split('T')[0]
     );
+  }
+
+  async getLatestFinalizedPayroll(): Promise<Payroll | undefined> {
+    const finalized = Array.from(this.payrolls.values()).filter(p => p.status === "finalized");
+    if (finalized.length === 0) return undefined;
+    return finalized.sort((a, b) =>
+      new Date(b.weekEndingDate).getTime() - new Date(a.weekEndingDate).getTime()
+    )[0];
   }
 
   async createPayroll(payroll: InsertPayroll): Promise<Payroll> {
