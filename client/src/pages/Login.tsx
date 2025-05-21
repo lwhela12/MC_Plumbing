@@ -19,7 +19,9 @@ export default function Login() {
         return;
       }
       
-      await apiRequest("POST", "/api/login", { username, password });
+      const response = await apiRequest("POST", "/api/login", { username, password });
+      const data = await response.json();
+      console.log("Login success:", data);
       navigate("/");
     } catch (err: any) {
       console.error("Login error:", err);
