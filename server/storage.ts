@@ -40,8 +40,11 @@ export interface IStorage {
 
   // User operations
   createUser(user: InsertUser): Promise<User>;
-  getUserByUsername(username: string): Promise<User | undefined>;
+  getUserByEmail(email: string): Promise<User | undefined>;
   getUserById(id: number): Promise<User | undefined>;
+  setLoginToken(userId: number, token: string): Promise<void>;
+  getUserByLoginToken(token: string): Promise<User | undefined>;
+  clearLoginToken(token: string): Promise<void>;
 }
 
 export class MemStorage implements IStorage {
@@ -49,6 +52,7 @@ export class MemStorage implements IStorage {
   private jobs: Map<number, Job>;
   private payrolls: Map<number, Payroll>;
   private users: Map<number, User>;
+  private loginTokens: Map<string, number>;
   private plumberId: number;
   private jobId: number;
   private payrollId: number;
@@ -59,6 +63,7 @@ export class MemStorage implements IStorage {
     this.jobs = new Map();
     this.payrolls = new Map();
     this.users = new Map();
+    this.loginTokens = new Map();
     this.plumberId = 1;
     this.jobId = 1;
     this.payrollId = 1;
@@ -283,15 +288,29 @@ export class MemStorage implements IStorage {
     return newUser;
   }
 
-  async getUserByUsername(username: string): Promise<User | undefined> {
+  async getUserByEmail(email: string): Promise<User | undefined> {
     for (const u of this.users.values()) {
-      if (u.username === username) return u;
+      if (u.email === email) return u;
     }
     return undefined;
   }
 
   async getUserById(id: number): Promise<User | undefined> {
     return this.users.get(id);
+  }
+
+  async setLoginToken(userId: number, token: string): Promise<void> {
+    this.loginTokens.set(token, userId);
+  }
+
+  async getUserByLoginToken(token: string): Promise<User | undefined> {
+    const userId = this.loginTokens.get(token);
+    if (!userId) return undefined;
+    return this.users.get(userId);
+  }
+
+  async clearLoginToken(token: string): Promise<void> {
+    this.loginTokens.delete(token);
   }
 }
 

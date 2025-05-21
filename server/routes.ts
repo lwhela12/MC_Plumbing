@@ -10,6 +10,7 @@ import {
 } from "@shared/schema";
 import { z } from "zod";
 import { hashPassword, verifyPassword } from "./auth";
+import crypto from "crypto";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   const httpServer = createServer(app);
@@ -24,16 +25,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/register", async (req, res) => {
     try {
       const validated = insertUserSchema.parse(req.body);
-      const existing = await storage.getUserByUsername(validated.username);
+      const existing = await storage.getUserByEmail(validated.email);
       if (existing) {
-        return res.status(400).json({ message: "Username taken" });
+        return res.status(400).json({ message: "Email already registered" });
       }
       const user = await storage.createUser({
-        username: validated.username,
+        name: validated.name,
+        email: validated.email,
         passwordHash: hashPassword(validated.passwordHash),
       });
       req.session.userId = user.id;
-      res.status(201).json({ id: user.id, username: user.username });
+      res.status(201).json({ id: user.id, name: user.name, email: user.email });
     } catch (error) {
       if (error instanceof z.ZodError) {
         return res.status(400).json({ message: "Invalid user data", errors: error.errors });
@@ -44,19 +46,47 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/login", async (req, res) => {
     try {
-      const { username, password } = z
-        .object({ username: z.string(), password: z.string() })
+      const { email, password } = z
+        .object({ email: z.string(), password: z.string() })
         .parse(req.body);
-      const user = await storage.getUserByUsername(username);
+      const user = await storage.getUserByEmail(email);
       if (!user || !verifyPassword(password, user.passwordHash)) {
         return res.status(401).json({ message: "Invalid credentials" });
       }
       req.session.userId = user.id;
-      res.json({ id: user.id, username: user.username });
+      res.json({ id: user.id, name: user.name, email: user.email });
     } catch (error) {
       if (error instanceof z.ZodError) {
         return res.status(400).json({ message: "Invalid login data", errors: error.errors });
       }
+      res.status(500).json({ message: "Failed to login" });
+    }
+  });
+
+  app.post("/api/forgot-password", async (req, res) => {
+    try {
+      const { email } = z.object({ email: z.string() }).parse(req.body);
+      const user = await storage.getUserByEmail(email);
+      if (user) {
+        const token = crypto.randomBytes(20).toString("hex");
+        await storage.setLoginToken(user.id, token);
+        console.log(`Login link for ${email}: http://localhost:5000/login?token=${token}`);
+      }
+      res.json({ message: "If the email exists, a login link has been sent." });
+    } catch {
+      res.status(500).json({ message: "Failed to process request" });
+    }
+  });
+
+  app.post("/api/login-with-token", async (req, res) => {
+    try {
+      const { token } = z.object({ token: z.string() }).parse(req.body);
+      const user = await storage.getUserByLoginToken(token);
+      if (!user) return res.status(400).json({ message: "Invalid token" });
+      await storage.clearLoginToken(token);
+      req.session.userId = user.id;
+      res.json({ id: user.id, name: user.name, email: user.email });
+    } catch {
       res.status(500).json({ message: "Failed to login" });
     }
   });
@@ -71,7 +101,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     if (!req.session.userId) return res.status(401).end();
     const user = await storage.getUserById(req.session.userId);
     if (!user) return res.status(401).end();
-    res.json({ id: user.id, username: user.username });
+    res.json({ id: user.id, name: user.name, email: user.email });
   });
 
   // Plumber routes
