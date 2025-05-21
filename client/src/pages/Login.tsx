@@ -23,7 +23,7 @@ export default function Login() {
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await apiRequest("POST", "/api/login", { email, password });
+      await apiRequest("POST", "/api/login", { username: email, password });
       navigate("/");
     } catch (err: any) {
       setError(err.message);

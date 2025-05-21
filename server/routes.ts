@@ -6,7 +6,8 @@ import {
   insertJobSchema, updateJobSchema,
   insertPayrollSchema, updatePayrollSchema,
   jobFormSchema,
-  insertUserSchema
+  insertUserSchema,
+  loginSchema
 } from "@shared/schema";
 import { z } from "zod";
 import { hashPassword, verifyPassword } from "./auth";
@@ -49,19 +50,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/login", async (req, res) => {
     try {
-      const { email, password } = z
-        .object({ email: z.string(), password: z.string() })
-        .parse(req.body);
-      const user = await storage.getUserByEmail(email);
+      const { username, password } = loginSchema.parse(req.body);
+      const user = await storage.getUserByUsername(username);
       if (!user || !verifyPassword(password, user.passwordHash)) {
         return res.status(401).json({ message: "Invalid credentials" });
       }
-      req.session.userId = user.id;
-      res.json({ id: user.id, name: user.name, email: user.email });
+      
+      // Set session using type assertion to avoid TypeScript errors
+      if (req.session) {
+        (req.session as any).userId = user.id;
+      }
+      
+      res.json({ id: user.id, username: user.username });
     } catch (error) {
       if (error instanceof z.ZodError) {
         return res.status(400).json({ message: "Invalid login data", errors: error.errors });
       }
+      console.error("Login error:", error);
       res.status(500).json({ message: "Failed to login" });
     }
   });
