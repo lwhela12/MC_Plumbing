@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useLocation } from "wouter";
 import { apiRequest } from "@/lib/queryClient";
@@ -9,7 +10,6 @@ export default function Login() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
-
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -37,4 +37,3 @@ export default function Login() {
     </div>
   );
 }
-
