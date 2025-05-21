@@ -13,6 +13,8 @@ export default function Login() {
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError(null);
+    
     try {
       if (!username || !password) {
         setError("Username and password are required");
@@ -21,10 +23,9 @@ export default function Login() {
       
       const response = await apiRequest("POST", "/api/login", { username, password });
       if (!response.ok) {
-        throw new Error("Invalid credentials");
+        const error = await response.json();
+        throw new Error(error.message || "Invalid credentials");
       }
-      const data = await response.json();
-      console.log("Login successful:", data);
       navigate("/");
     } catch (err: any) {
       console.error("Login error:", err);
