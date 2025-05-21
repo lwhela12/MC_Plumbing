@@ -23,9 +23,11 @@ export default function Login() {
       
       const response = await apiRequest("POST", "/api/login", { username, password });
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || "Invalid credentials");
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Invalid credentials");
       }
+      const data = await response.json();
+      console.log("Login success:", data);
       navigate("/");
     } catch (err: any) {
       console.error("Login error:", err);
