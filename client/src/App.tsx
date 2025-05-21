@@ -11,6 +11,7 @@ import WeeklyPayroll from "./pages/WeeklyPayroll";
 import Reports from "./pages/Reports";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
+import ForgotPassword from "./pages/ForgotPassword";
 
 function Router() {
   const { data: user, isLoading } = useQuery(["/api/me"], getQueryFn({ on401: "returnNull" }));
@@ -21,6 +22,7 @@ function Router() {
     return (
       <Switch>
         <Route path="/register" component={Register} />
+        <Route path="/forgot-password" component={ForgotPassword} />
         <Route component={Login} />
       </Switch>
     );
