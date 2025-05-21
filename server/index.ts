@@ -4,11 +4,22 @@ import { setupVite, serveStatic, log } from "./vite";
 import { db } from "./db";
 import { sql } from "drizzle-orm";
 import { plumbers } from "@shared/schema";
-import { initializeDatabase } from "./initDb";
+import session from "express-session";
+import connectMem from "memorystore";
 
 const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
+
+const MemStore = connectMem(session);
+app.use(
+  session({
+    store: new MemStore({ checkPeriod: 86400000 }),
+    secret: process.env.SESSION_SECRET || "secret",
+    resave: false,
+    saveUninitialized: false,
+  })
+);
 
 app.use((req, res, next) => {
   const start = Date.now();
@@ -80,6 +91,12 @@ app.use((req, res, next) => {
         plumber_id INTEGER NOT NULL,
         payroll_id INTEGER NOT NULL
       )`);
+
+      await db.execute(sql`CREATE TABLE IF NOT EXISTS users (
+        id SERIAL PRIMARY KEY,
+        username TEXT NOT NULL UNIQUE,
+        password_hash TEXT NOT NULL
+      )`);
       
       // Check if there's any data in the database
       const plumbersCountResult = await db
@@ -87,13 +104,10 @@ app.use((req, res, next) => {
         .from(plumbers);
       const plumbersCount = Number(plumbersCountResult[0]?.count ?? 0);
 
-      // Only load the demo data when the database is empty so we don't
-      // create duplicate plumbers every time the server starts.
       if (plumbersCount === 0) {
-        log("Initializing database with sample data...");
-        await initializeDatabase();
+        log("Database initialized and empty.");
       } else {
-        log(`Database already has ${plumbersCount} plumbers, skipping sample data load.`);
+        log(`Database already has ${plumbersCount} plumbers.`);
       }
       
       log("Database setup complete!");

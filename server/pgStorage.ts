@@ -1,9 +1,10 @@
 import { eq, and, desc } from "drizzle-orm";
 import { db } from "./db";
-import { 
+import {
   plumbers, type Plumber, type InsertPlumber, type UpdatePlumber,
   jobs, type Job, type InsertJob, type UpdateJob,
   payrolls, type Payroll, type InsertPayroll, type UpdatePayroll,
+  users, type User, type InsertUser,
   type JobWithPlumber, type PayrollSummary
 } from "@shared/schema";
 import { IStorage } from "./storage";
@@ -210,5 +211,21 @@ export class PgStorage implements IStorage {
     }
     
     return Array.from(plumberSummaryMap.values());
+  }
+
+  // User operations
+  async createUser(user: InsertUser): Promise<User> {
+    const results = await db.insert(users).values(user).returning();
+    return results[0];
+  }
+
+  async getUserByUsername(username: string): Promise<User | undefined> {
+    const results = await db.select().from(users).where(eq(users.username, username));
+    return results.length ? results[0] : undefined;
+  }
+
+  async getUserById(id: number): Promise<User | undefined> {
+    const results = await db.select().from(users).where(eq(users.id, id));
+    return results.length ? results[0] : undefined;
   }
 }

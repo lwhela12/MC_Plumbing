@@ -1,7 +1,8 @@
-import { 
+import {
   plumbers, type Plumber, type InsertPlumber, type UpdatePlumber,
   jobs, type Job, type InsertJob, type UpdateJob,
   payrolls, type Payroll, type InsertPayroll, type UpdatePayroll,
+  users, type User, type InsertUser,
   type JobWithPlumber, type PayrollSummary
 } from "@shared/schema";
 
@@ -36,23 +37,32 @@ export interface IStorage {
   
   // Summary operations
   getPayrollSummary(payrollId: number): Promise<PayrollSummary[]>;
+
+  // User operations
+  createUser(user: InsertUser): Promise<User>;
+  getUserByUsername(username: string): Promise<User | undefined>;
+  getUserById(id: number): Promise<User | undefined>;
 }
 
 export class MemStorage implements IStorage {
   private plumbers: Map<number, Plumber>;
   private jobs: Map<number, Job>;
   private payrolls: Map<number, Payroll>;
+  private users: Map<number, User>;
   private plumberId: number;
   private jobId: number;
   private payrollId: number;
+  private userId: number;
 
   constructor() {
     this.plumbers = new Map();
     this.jobs = new Map();
     this.payrolls = new Map();
+    this.users = new Map();
     this.plumberId = 1;
     this.jobId = 1;
     this.payrollId = 1;
+    this.userId = 1;
     
     // Initialize with sample data for development
     this.initializeData();
@@ -263,6 +273,25 @@ export class MemStorage implements IStorage {
     }
     
     return Array.from(plumberSummaryMap.values());
+  }
+
+  // User operations
+  async createUser(user: InsertUser): Promise<User> {
+    const id = this.userId++;
+    const newUser: User = { ...user, id };
+    this.users.set(id, newUser);
+    return newUser;
+  }
+
+  async getUserByUsername(username: string): Promise<User | undefined> {
+    for (const u of this.users.values()) {
+      if (u.username === username) return u;
+    }
+    return undefined;
+  }
+
+  async getUserById(id: number): Promise<User | undefined> {
+    return this.users.get(id);
   }
 }
 
