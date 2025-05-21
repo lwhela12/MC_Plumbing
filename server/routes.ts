@@ -73,29 +73,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/forgot-password", async (req, res) => {
     try {
-      const { email } = z.object({ email: z.string() }).parse(req.body);
-      const user = await storage.getUserByEmail(email);
+      const { username } = z.object({ username: z.string() }).parse(req.body);
+      const user = await storage.getUserByUsername(username);
       if (user) {
-        const token = crypto.randomBytes(20).toString("hex");
-        await storage.setLoginToken(user.id, token);
-        console.log(`Login link for ${email}: http://localhost:5000/login?token=${token}`);
+        // We're simplifying the password reset flow for now
+        console.log(`Password reset requested for username: ${username}`);
       }
-      res.json({ message: "If the email exists, a login link has been sent." });
-    } catch {
+      // For security, always return the same message whether user exists or not
+      res.json({ message: "If the username exists, a password reset link will be sent." });
+    } catch (error) {
+      console.error("Forgot password error:", error);
       res.status(500).json({ message: "Failed to process request" });
     }
   });
 
-  app.post("/api/login-with-token", async (req, res) => {
+  // We're simplifying authentication to use direct username/password only
+  app.get("/api/session", async (req, res) => {
     try {
-      const { token } = z.object({ token: z.string() }).parse(req.body);
-      const user = await storage.getUserByLoginToken(token);
-      if (!user) return res.status(400).json({ message: "Invalid token" });
-      await storage.clearLoginToken(token);
-      req.session.userId = user.id;
-      res.json({ id: user.id, name: user.name, email: user.email });
-    } catch {
-      res.status(500).json({ message: "Failed to login" });
+      if (req.session && (req.session as any).userId) {
+        const userId = (req.session as any).userId;
+        const user = await storage.getUserById(userId);
+        if (user) {
+          return res.json({ 
+            id: user.id, 
+            username: user.username 
+          });
+        }
+      }
+      res.status(401).json({ message: "Not authenticated" });
+    } catch (error) {
+      console.error("Session check error:", error);
+      res.status(500).json({ message: "Error checking authentication" });
     }
   });
 
