@@ -285,9 +285,9 @@ export class MemStorage implements IStorage {
     return newUser;
   }
 
-  async getUserByEmail(email: string): Promise<User | undefined> {
+  async getUserByUsername(username: string): Promise<User | undefined> {
     for (const u of this.users.values()) {
-      if (u.email === email) return u;
+      if (u.username === username) return u;
     }
     return undefined;
   }

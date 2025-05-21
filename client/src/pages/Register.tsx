@@ -6,22 +6,20 @@ import { Button } from "@/components/ui/button";
 
 export default function Register() {
   const [, navigate] = useLocation();
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      if (!email) {
-        setError("Email is required");
+      if (!username) {
+        setError("Username is required");
         return;
       }
       
-      // Use the email as the username for simplicity
       await apiRequest("POST", "/api/register", { 
-        username: email,
+        username,
         passwordHash: password 
       });
       
@@ -38,8 +36,7 @@ export default function Register() {
       <form onSubmit={onSubmit} className="w-full max-w-sm space-y-4">
         <h1 className="text-2xl font-medium text-center">Create Account</h1>
         {error && <div className="text-red-600 text-sm">{error}</div>}
-        <Input placeholder="Name" value={name} onChange={e => setName(e.target.value)} />
-        <Input placeholder="Email" value={email} onChange={e => setEmail(e.target.value)} />
+        <Input placeholder="Username" value={username} onChange={e => setUsername(e.target.value)} />
         <Input type="password" placeholder="Password" value={password} onChange={e => setPassword(e.target.value)} />
         <Button type="submit" className="w-full">Register</Button>
         <div className="text-center text-sm">
