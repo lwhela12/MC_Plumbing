@@ -14,7 +14,10 @@ import Register from "./pages/Register";
 import ForgotPassword from "./pages/ForgotPassword";
 
 function Router() {
-  const { data: user, isLoading } = useQuery(["/api/me"], getQueryFn({ on401: "returnNull" }));
+  const { data: user, isLoading } = useQuery({
+    queryKey: ["/api/me"],
+    queryFn: () => getQueryFn({ on401: "returnNull" })("/api/me")
+  });
 
   if (isLoading) return null;
 
