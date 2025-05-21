@@ -1,6 +1,6 @@
 import { Switch, Route } from "wouter";
-import { queryClient } from "./lib/queryClient";
-import { QueryClientProvider } from "@tanstack/react-query";
+import { queryClient, getQueryFn } from "./lib/queryClient";
+import { QueryClientProvider, useQuery } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import NotFound from "@/pages/not-found";
@@ -9,8 +9,23 @@ import Dashboard from "./pages/Dashboard";
 import Plumbers from "./pages/Plumbers";
 import WeeklyPayroll from "./pages/WeeklyPayroll";
 import Reports from "./pages/Reports";
+import Login from "./pages/Login";
+import Register from "./pages/Register";
 
 function Router() {
+  const { data: user, isLoading } = useQuery(["/api/me"], getQueryFn({ on401: "returnNull" }));
+
+  if (isLoading) return null;
+
+  if (!user) {
+    return (
+      <Switch>
+        <Route path="/register" component={Register} />
+        <Route component={Login} />
+      </Switch>
+    );
+  }
+
   return (
     <Layout>
       <Switch>

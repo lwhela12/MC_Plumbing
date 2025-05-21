@@ -1,5 +1,6 @@
 import React from "react";
 import { useLocation } from "wouter";
+import { apiRequest } from "@/lib/queryClient";
 
 interface HeaderProps {
   onOpenSidebar: () => void;
@@ -7,6 +8,11 @@ interface HeaderProps {
 
 const Header: React.FC<HeaderProps> = ({ onOpenSidebar }) => {
   const [location] = useLocation();
+
+  const handleLogout = async () => {
+    await apiRequest("POST", "/api/logout");
+    window.location.href = "/";
+  };
   
   // Get title based on current path
   const getTitle = () => {
@@ -43,12 +49,10 @@ const Header: React.FC<HeaderProps> = ({ onOpenSidebar }) => {
             <span>Help</span>
           </button>
           
-          <div className="flex items-center">
-            <span className="hidden md:block text-sm font-medium mr-2">Admin</span>
-            <button className="flex items-center justify-center w-8 h-8 rounded-full bg-blue-600 text-white">
-              <span className="material-icons text-sm">person</span>
-            </button>
-          </div>
+          <button onClick={handleLogout} className="btn btn-secondary px-3 py-1 text-xs flex items-center gap-1">
+            <span className="material-icons text-sm">logout</span>
+            <span>Logout</span>
+          </button>
         </div>
       </div>
     </header>
