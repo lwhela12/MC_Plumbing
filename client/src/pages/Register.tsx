@@ -14,7 +14,7 @@ export default function Register() {
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await apiRequest("POST", "/api/register", { name, email, passwordHash: password, username: email });
+      await apiRequest("POST", "/api/register", { username: email, passwordHash: password });
       navigate("/");
     } catch (err: any) {
       setError(err.message);

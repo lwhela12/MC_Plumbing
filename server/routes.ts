@@ -30,8 +30,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Email already registered" });
       }
       const user = await storage.createUser({
-        name: validated.name,
-        email: validated.email,
+        username: validated.username || validated.email,
         passwordHash: hashPassword(validated.passwordHash),
       });
       req.session.userId = user.id;
