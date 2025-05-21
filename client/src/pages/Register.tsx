@@ -14,10 +14,22 @@ export default function Register() {
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await apiRequest("POST", "/api/register", { username: email, passwordHash: password });
-      navigate("/");
+      if (!email) {
+        setError("Email is required");
+        return;
+      }
+      
+      // Use the email as the username for simplicity
+      await apiRequest("POST", "/api/register", { 
+        username: email,
+        passwordHash: password 
+      });
+      
+      // If successful, redirect to login
+      navigate("/login");
     } catch (err: any) {
-      setError(err.message);
+      console.error("Registration error:", err);
+      setError(err.message || "Registration failed");
     }
   };
 

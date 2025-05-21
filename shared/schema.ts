@@ -6,18 +6,13 @@ import { sql } from "drizzle-orm";
 // User model
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
-  name: text("name").notNull(),
-  email: text("email").notNull().unique(),
+  username: text("username").notNull(),
   passwordHash: text("password_hash").notNull(),
-  loginToken: text("login_token"),
 });
 
 export const insertUserSchema = createInsertSchema(users).pick({
-  name: true,
-  email: true,
+  username: true,
   passwordHash: true,
-}).extend({
-  username: z.string().optional(),
 });
 
 export type InsertUser = z.infer<typeof insertUserSchema>;

@@ -219,8 +219,8 @@ export class PgStorage implements IStorage {
     return results[0];
   }
 
-  async getUserByEmail(email: string): Promise<User | undefined> {
-    const results = await db.select().from(users).where(eq(users.email, email));
+  async getUserByUsername(username: string): Promise<User | undefined> {
+    const results = await db.select().from(users).where(eq(users.username, username));
     return results.length ? results[0] : undefined;
   }
 

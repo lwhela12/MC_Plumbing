@@ -25,20 +25,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/register", async (req, res) => {
     try {
       const validated = insertUserSchema.parse(req.body);
-      const existing = await storage.getUserByEmail(validated.email);
+      const existing = await storage.getUserByUsername(validated.username);
       if (existing) {
-        return res.status(400).json({ message: "Email already registered" });
+        return res.status(400).json({ message: "Username already registered" });
       }
       const user = await storage.createUser({
-        username: validated.username || validated.email,
+        username: validated.username,
         passwordHash: hashPassword(validated.passwordHash),
       });
-      req.session.userId = user.id;
-      res.status(201).json({ id: user.id, name: user.name, email: user.email });
+      // Set session
+      if (req.session) {
+        (req.session as any).userId = user.id;
+      }
+      res.status(201).json({ id: user.id, username: user.username });
     } catch (error) {
       if (error instanceof z.ZodError) {
         return res.status(400).json({ message: "Invalid user data", errors: error.errors });
       }
+      console.error("Registration error:", error);
       res.status(500).json({ message: "Failed to register" });
     }
   });

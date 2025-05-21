@@ -40,11 +40,8 @@ export interface IStorage {
 
   // User operations
   createUser(user: InsertUser): Promise<User>;
-  getUserByEmail(email: string): Promise<User | undefined>;
+  getUserByUsername(username: string): Promise<User | undefined>;
   getUserById(id: number): Promise<User | undefined>;
-  setLoginToken(userId: number, token: string): Promise<void>;
-  getUserByLoginToken(token: string): Promise<User | undefined>;
-  clearLoginToken(token: string): Promise<void>;
 }
 
 export class MemStorage implements IStorage {
