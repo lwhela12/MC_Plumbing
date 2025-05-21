@@ -94,8 +94,7 @@ app.use((req, res, next) => {
 
       await db.execute(sql`CREATE TABLE IF NOT EXISTS users (
         id SERIAL PRIMARY KEY,
-        name TEXT NOT NULL,
-        email TEXT NOT NULL UNIQUE,
+        username TEXT NOT NULL UNIQUE,
         password_hash TEXT NOT NULL,
         login_token TEXT
       )`);
