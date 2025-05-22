@@ -10,8 +10,7 @@ import {
   loginSchema
 } from "@shared/schema";
 import { z } from "zod";
-import { hashPassword, verifyPassword } from "./auth";
-import crypto from "crypto";
+import { hashPassword, verifyPassword, generateToken, verifyToken } from "./auth";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   const httpServer = createServer(app);
@@ -34,10 +33,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         username: validated.username,
         passwordHash: hashPassword(validated.passwordHash),
       });
-      // Set session
-      if (req.session) {
-        (req.session as any).userId = user.id;
-      }
+      const token = generateToken(user.id);
+      res.cookie("token", token, { httpOnly: true, sameSite: "lax" });
       res.status(201).json({ id: user.id, username: user.username });
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -55,12 +52,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!user || !verifyPassword(password, user.passwordHash)) {
         return res.status(401).json({ message: "Invalid credentials" });
       }
-      
-      // Set session using type assertion to avoid TypeScript errors
-      if (req.session) {
-        (req.session as any).userId = user.id;
-      }
-      
+
+      const token = generateToken(user.id);
+      res.cookie("token", token, { httpOnly: true, sameSite: "lax" });
       res.json({ id: user.id, username: user.username });
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -90,14 +84,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // We're simplifying authentication to use direct username/password only
   app.get("/api/session", async (req, res) => {
     try {
-      if (req.session && (req.session as any).userId) {
-        const userId = (req.session as any).userId;
-        const user = await storage.getUserById(userId);
-        if (user) {
-          return res.json({ 
-            id: user.id, 
-            username: user.username 
-          });
+      const token = req.cookies.token;
+      if (token) {
+        const payload = verifyToken(token);
+        if (payload) {
+          const user = await storage.getUserById(payload.userId);
+          if (user) {
+            return res.json({ id: user.id, username: user.username });
+          }
         }
       }
       res.status(401).json({ message: "Not authenticated" });
@@ -108,16 +102,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.post("/api/logout", (req, res) => {
-    req.session.destroy(() => {
-      res.status(204).end();
-    });
+    res.clearCookie("token");
+    res.status(204).end();
   });
 
   app.get("/api/me", async (req, res) => {
-    if (!req.session.userId) return res.status(401).end();
-    const user = await storage.getUserById(req.session.userId);
+    const token = req.cookies.token;
+    if (!token) return res.status(401).end();
+    const payload = verifyToken(token);
+    if (!payload) return res.status(401).end();
+    const user = await storage.getUserById(payload.userId);
     if (!user) return res.status(401).end();
-    res.json({ id: user.id, name: user.name, email: user.email });
+    res.json({ id: user.id, username: user.username });
   });
 
   // Plumber routes

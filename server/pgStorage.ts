@@ -229,16 +229,4 @@ export class PgStorage implements IStorage {
     return results.length ? results[0] : undefined;
   }
 
-  async setLoginToken(userId: number, token: string): Promise<void> {
-    await db.update(users).set({ loginToken: token }).where(eq(users.id, userId));
-  }
-
-  async getUserByLoginToken(token: string): Promise<User | undefined> {
-    const results = await db.select().from(users).where(eq(users.loginToken, token));
-    return results.length ? results[0] : undefined;
-  }
-
-  async clearLoginToken(token: string): Promise<void> {
-    await db.update(users).set({ loginToken: null }).where(eq(users.loginToken, token));
-  }
 }
