@@ -49,7 +49,6 @@ export class MemStorage implements IStorage {
   private jobs: Map<number, Job>;
   private payrolls: Map<number, Payroll>;
   private users: Map<number, User>;
-  private loginTokens: Map<string, number>;
   private plumberId: number;
   private jobId: number;
   private payrollId: number;
@@ -60,7 +59,6 @@ export class MemStorage implements IStorage {
     this.jobs = new Map();
     this.payrolls = new Map();
     this.users = new Map();
-    this.loginTokens = new Map();
     this.plumberId = 1;
     this.jobId = 1;
     this.payrollId = 1;
@@ -296,19 +294,6 @@ export class MemStorage implements IStorage {
     return this.users.get(id);
   }
 
-  async setLoginToken(userId: number, token: string): Promise<void> {
-    this.loginTokens.set(token, userId);
-  }
-
-  async getUserByLoginToken(token: string): Promise<User | undefined> {
-    const userId = this.loginTokens.get(token);
-    if (!userId) return undefined;
-    return this.users.get(userId);
-  }
-
-  async clearLoginToken(token: string): Promise<void> {
-    this.loginTokens.delete(token);
-  }
 }
 
 import { PgStorage } from "./pgStorage";

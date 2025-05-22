@@ -4,22 +4,12 @@ import { setupVite, serveStatic, log } from "./vite";
 import { db } from "./db";
 import { sql } from "drizzle-orm";
 import { plumbers } from "@shared/schema";
-import session from "express-session";
-import connectMem from "memorystore";
+import cookieParser from "cookie-parser";
 
 const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
-
-const MemStore = connectMem(session);
-app.use(
-  session({
-    store: new MemStore({ checkPeriod: 86400000 }),
-    secret: process.env.SESSION_SECRET || "secret",
-    resave: false,
-    saveUninitialized: false,
-  })
-);
+app.use(cookieParser());
 
 app.use((req, res, next) => {
   const start = Date.now();
