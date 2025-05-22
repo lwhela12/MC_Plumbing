@@ -25,7 +25,10 @@ export class PgStorage implements IStorage {
   }
 
   async createPlumber(plumber: InsertPlumber): Promise<Plumber> {
-    const results = await db.insert(plumbers).values(plumber).returning();
+    const results = await db.insert(plumbers).values({
+      ...plumber,
+      isActive: plumber.isActive ?? true // Set active by default if not specified
+    }).returning();
     return results[0];
   }
 
