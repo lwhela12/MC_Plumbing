@@ -1,5 +1,6 @@
 import React from "react";
 import { useLocation } from "wouter";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 interface HeaderProps {
   onOpenSidebar: () => void;
@@ -7,6 +8,22 @@ interface HeaderProps {
 
 const Header: React.FC<HeaderProps> = ({ onOpenSidebar }) => {
   const [location] = useLocation();
+  const queryClient = useQueryClient();
+
+  const logoutMutation = useMutation({
+    mutationFn: async () => {
+      const response = await fetch("/api/logout", {
+        method: "POST",
+      });
+      if (!response.ok) {
+        throw new Error("Logout failed");
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/me"] });
+    },
+  });
   
   // Get title based on current path
   const getTitle = () => {

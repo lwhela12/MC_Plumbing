@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useLocation } from "wouter";
-import { apiRequest } from "@/lib/queryClient";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 
@@ -9,26 +9,40 @@ export default function Register() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const queryClient = useQueryClient();
+
+  const registerMutation = useMutation({
+    mutationFn: async (data: { username: string; passwordHash: string }) => {
+      const response = await fetch("/api/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || "Registration failed");
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/me"] });
+      navigate("/");
+    },
+    onError: (err: any) => {
+      setError(err.message);
+    },
+  });
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    try {
-      if (!username) {
-        setError("Username is required");
-        return;
-      }
-      
-      await apiRequest("POST", "/api/register", { 
-        username,
-        passwordHash: password 
-      });
-      
-      // If successful, redirect to login
-      navigate("/login");
-    } catch (err: any) {
-      console.error("Registration error:", err);
-      setError(err.message || "Registration failed");
+    setError(null);
+    
+    if (!username || !password) {
+      setError("Username and password are required");
+      return;
     }
+    
+    registerMutation.mutate({ username, passwordHash: password });
   };
 
   return (

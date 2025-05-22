@@ -5,9 +5,12 @@ import {
   insertPlumberSchema, updatePlumberSchema,
   insertJobSchema, updateJobSchema,
   insertPayrollSchema, updatePayrollSchema,
-  jobFormSchema
+  jobFormSchema,
+  insertUserSchema,
+  loginSchema
 } from "@shared/schema";
 import { z } from "zod";
+import { hashPassword, verifyPassword } from "./auth";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   const httpServer = createServer(app);
@@ -18,6 +21,89 @@ export async function registerRoutes(app: Express): Promise<Server> {
     next();
   });
 
+  // Authentication routes
+  app.post("/api/register", async (req, res) => {
+    try {
+      const { username, passwordHash } = insertUserSchema.parse(req.body);
+      
+      // Check if user already exists
+      const existingUser = await storage.getUserByUsername(username);
+      if (existingUser) {
+        return res.status(400).json({ message: "Username already exists" });
+      }
+
+      // Create new user
+      const user = await storage.createUser({
+        username,
+        passwordHash: hashPassword(passwordHash)
+      });
+
+      // Set session
+      (req.session as any).userId = user.id;
+      res.status(201).json({ id: user.id, username: user.username });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid data", errors: error.errors });
+      }
+      console.error("Registration error:", error);
+      res.status(500).json({ message: "Registration failed" });
+    }
+  });
+
+  app.post("/api/login", async (req, res) => {
+    try {
+      const { username, password } = loginSchema.parse(req.body);
+      
+      // Find user
+      const user = await storage.getUserByUsername(username);
+      if (!user) {
+        return res.status(401).json({ message: "Invalid username or password" });
+      }
+
+      // Verify password
+      if (!verifyPassword(password, user.passwordHash)) {
+        return res.status(401).json({ message: "Invalid username or password" });
+      }
+
+      // Set session
+      (req.session as any).userId = user.id;
+      res.json({ id: user.id, username: user.username });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid data", errors: error.errors });
+      }
+      console.error("Login error:", error);
+      res.status(500).json({ message: "Login failed" });
+    }
+  });
+
+  app.post("/api/logout", (req, res) => {
+    req.session.destroy((err) => {
+      if (err) {
+        return res.status(500).json({ message: "Logout failed" });
+      }
+      res.json({ message: "Logged out successfully" });
+    });
+  });
+
+  app.get("/api/me", async (req, res) => {
+    try {
+      const userId = (req.session as any)?.userId;
+      if (!userId) {
+        return res.status(401).json({ message: "Not authenticated" });
+      }
+
+      const user = await storage.getUserById(userId);
+      if (!user) {
+        return res.status(401).json({ message: "User not found" });
+      }
+
+      res.json({ id: user.id, username: user.username });
+    } catch (error) {
+      console.error("Session check error:", error);
+      res.status(500).json({ message: "Session check failed" });
+    }
+  });
 
 
   // Plumber routes

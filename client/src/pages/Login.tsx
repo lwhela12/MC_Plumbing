@@ -1,7 +1,7 @@
 
 import { useState } from "react";
 import { useLocation } from "wouter";
-import { apiRequest } from "@/lib/queryClient";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 
@@ -10,29 +10,40 @@ export default function Login() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const queryClient = useQueryClient();
+
+  const loginMutation = useMutation({
+    mutationFn: async (data: { username: string; password: string }) => {
+      const response = await fetch("/api/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || "Login failed");
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/me"] });
+      navigate("/");
+    },
+    onError: (err: any) => {
+      setError(err.message);
+    },
+  });
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
     
-    try {
-      if (!username || !password) {
-        setError("Username and password are required");
-        return;
-      }
-      
-      const response = await apiRequest("POST", "/api/login", { username, password });
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || "Invalid credentials");
-      }
-      const data = await response.json();
-      console.log("Login success:", data);
-      navigate("/");
-    } catch (err: any) {
-      console.error("Login error:", err);
-      setError(err?.message || "Invalid credentials");
+    if (!username || !password) {
+      setError("Username and password are required");
+      return;
     }
+    
+    loginMutation.mutate({ username, password });
   };
 
   return (
