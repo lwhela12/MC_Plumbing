@@ -5,12 +5,9 @@ import {
   insertPlumberSchema, updatePlumberSchema,
   insertJobSchema, updateJobSchema,
   insertPayrollSchema, updatePayrollSchema,
-  jobFormSchema,
-  insertUserSchema,
-  loginSchema
+  jobFormSchema
 } from "@shared/schema";
 import { z } from "zod";
-import { hashPassword, verifyPassword, generateToken, verifyToken } from "./auth";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   const httpServer = createServer(app);
@@ -21,100 +18,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     next();
   });
 
-  // Authentication routes
-  app.post("/api/register", async (req, res) => {
-    try {
-      const validated = insertUserSchema.parse(req.body);
-      const existing = await storage.getUserByUsername(validated.username);
-      if (existing) {
-        return res.status(400).json({ message: "Username already registered" });
-      }
-      const user = await storage.createUser({
-        username: validated.username,
-        passwordHash: hashPassword(validated.passwordHash),
-      });
-      const token = generateToken(user.id);
-      res.cookie("token", token, { httpOnly: true, sameSite: "lax" });
-      res.status(201).json({ id: user.id, username: user.username });
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        return res.status(400).json({ message: "Invalid user data", errors: error.errors });
-      }
-      console.error("Registration error:", error);
-      res.status(500).json({ message: "Failed to register" });
-    }
-  });
 
-  app.post("/api/login", async (req, res) => {
-    try {
-      const { username, password } = loginSchema.parse(req.body);
-      const user = await storage.getUserByUsername(username);
-      if (!user || !verifyPassword(password, user.passwordHash)) {
-        return res.status(401).json({ message: "Invalid credentials" });
-      }
-
-      const token = generateToken(user.id);
-      res.cookie("token", token, { httpOnly: true, sameSite: "lax" });
-      res.json({ id: user.id, username: user.username });
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        return res.status(400).json({ message: "Invalid login data", errors: error.errors });
-      }
-      console.error("Login error:", error);
-      res.status(500).json({ message: "Failed to login" });
-    }
-  });
-
-  app.post("/api/forgot-password", async (req, res) => {
-    try {
-      const { username } = z.object({ username: z.string() }).parse(req.body);
-      const user = await storage.getUserByUsername(username);
-      if (user) {
-        // We're simplifying the password reset flow for now
-        console.log(`Password reset requested for username: ${username}`);
-      }
-      // For security, always return the same message whether user exists or not
-      res.json({ message: "If the username exists, a password reset link will be sent." });
-    } catch (error) {
-      console.error("Forgot password error:", error);
-      res.status(500).json({ message: "Failed to process request" });
-    }
-  });
-
-  // We're simplifying authentication to use direct username/password only
-  app.get("/api/session", async (req, res) => {
-    try {
-      const token = req.cookies.token;
-      if (token) {
-        const payload = verifyToken(token);
-        if (payload) {
-          const user = await storage.getUserById(payload.userId);
-          if (user) {
-            return res.json({ id: user.id, username: user.username });
-          }
-        }
-      }
-      res.status(401).json({ message: "Not authenticated" });
-    } catch (error) {
-      console.error("Session check error:", error);
-      res.status(500).json({ message: "Error checking authentication" });
-    }
-  });
-
-  app.post("/api/logout", (req, res) => {
-    res.clearCookie("token");
-    res.status(204).end();
-  });
-
-  app.get("/api/me", async (req, res) => {
-    const token = req.cookies.token;
-    if (!token) return res.status(401).end();
-    const payload = verifyToken(token);
-    if (!payload) return res.status(401).end();
-    const user = await storage.getUserById(payload.userId);
-    if (!user) return res.status(401).end();
-    res.json({ id: user.id, username: user.username });
-  });
 
   // Plumber routes
   app.get("/api/plumbers", async (req, res) => {

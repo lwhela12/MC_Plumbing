@@ -4,12 +4,10 @@ import { setupVite, serveStatic, log } from "./vite";
 import { db } from "./db";
 import { sql } from "drizzle-orm";
 import { plumbers } from "@shared/schema";
-import cookieParser from "cookie-parser";
 
 const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
-app.use(cookieParser());
 
 app.use((req, res, next) => {
   const start = Date.now();
@@ -82,12 +80,7 @@ app.use((req, res, next) => {
         payroll_id INTEGER NOT NULL
       )`);
 
-      await db.execute(sql`CREATE TABLE IF NOT EXISTS users (
-        id SERIAL PRIMARY KEY,
-        username TEXT NOT NULL UNIQUE,
-        password_hash TEXT NOT NULL,
-        login_token TEXT
-      )`);
+
       
       // Check if there's any data in the database
       const plumbersCountResult = await db
