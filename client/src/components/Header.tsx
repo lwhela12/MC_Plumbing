@@ -1,7 +1,5 @@
 import React from "react";
 import { useLocation } from "wouter";
-import { apiRequest, getQueryFn } from "@/lib/queryClient";
-import { useQuery } from "@tanstack/react-query";
 
 interface HeaderProps {
   onOpenSidebar: () => void;
@@ -9,12 +7,6 @@ interface HeaderProps {
 
 const Header: React.FC<HeaderProps> = ({ onOpenSidebar }) => {
   const [location] = useLocation();
-  const { data: user } = useQuery(["/api/me"], getQueryFn({ on401: "throw" }));
-
-  const handleLogout = async () => {
-    await apiRequest("POST", "/api/logout");
-    window.location.href = "/";
-  };
   
   // Get title based on current path
   const getTitle = () => {
@@ -51,11 +43,7 @@ const Header: React.FC<HeaderProps> = ({ onOpenSidebar }) => {
             <span>Help</span>
           </button>
           
-          {user && <span className="text-sm font-medium">{user.name.split(" ")[0]}</span>}
-          <button onClick={handleLogout} className="btn btn-secondary px-3 py-1 text-xs flex items-center gap-1">
-            <span className="material-icons text-sm">logout</span>
-            <span>Logout</span>
-          </button>
+          <span className="text-sm font-medium">MC Plumbing</span>
         </div>
       </div>
     </header>
