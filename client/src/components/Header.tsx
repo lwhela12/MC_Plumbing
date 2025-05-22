@@ -61,6 +61,15 @@ const Header: React.FC<HeaderProps> = ({ onOpenSidebar }) => {
           </button>
           
           <span className="text-sm font-medium">MC Plumbing</span>
+          
+          <button 
+            onClick={() => logoutMutation.mutate()}
+            disabled={logoutMutation.isPending}
+            className="btn btn-secondary px-3 py-1 text-xs flex items-center gap-1"
+          >
+            <span className="material-icons text-sm">logout</span>
+            <span>{logoutMutation.isPending ? "Logging out..." : "Logout"}</span>
+          </button>
         </div>
       </div>
     </header>
