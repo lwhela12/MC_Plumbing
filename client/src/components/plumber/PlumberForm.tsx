@@ -57,7 +57,9 @@ const PlumberForm: React.FC<PlumberFormProps> = ({ plumber, onSuccess, onCancel 
         title: `Plumber ${isEditing ? "updated" : "created"} successfully`,
         variant: "default",
       });
+      // Invalidate all plumber-related queries
       await queryClient.invalidateQueries({ queryKey: ["/api/plumbers"] });
+      await queryClient.invalidateQueries({ queryKey: ["/api/plumbers/active"] });
       if (onSuccess) onSuccess();
     },
     onError: (error) => {
