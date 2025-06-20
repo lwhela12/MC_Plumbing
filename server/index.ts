@@ -1,8 +1,9 @@
 import express, { type Request, Response, NextFunction } from "express";
 import session from "express-session";
+import connectPg from "connect-pg-simple";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
-import { db } from "./db";
+import { db, pool } from "./db";
 import { sql } from "drizzle-orm";
 import { plumbers } from "@shared/schema";
 
@@ -10,7 +11,7 @@ const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
-// Session configuration
+// Session configuration - use memory store for now to avoid connection issues
 app.use(session({
   secret: process.env.SESSION_SECRET || 'mc-plumbing-secret-key-change-in-production',
   resave: false,
@@ -52,15 +53,26 @@ app.use((req, res, next) => {
   next();
 });
 
-(async () => {
-  // If using PostgreSQL, perform migration
-  if (process.env.DATABASE_URL) {
+async function initializeDatabase() {
+  if (!process.env.DATABASE_URL || !db) {
+    log("Database URL not configured, skipping database setup");
+    return;
+  }
+
+  let retries = 3;
+  while (retries > 0) {
     try {
       log("Migrating database schema...");
-      await db.execute(sql`CREATE TABLE IF NOT EXISTS _drizzle_migrations (
+      
+      // Test connection first
+      await db.execute(sql`SELECT 1`);
+      
+      // Create users table for authentication
+      await db.execute(sql`CREATE TABLE IF NOT EXISTS users (
         id SERIAL PRIMARY KEY,
-        hash text NOT NULL,
-        created_at timestamptz DEFAULT now()
+        username TEXT UNIQUE NOT NULL,
+        password_hash TEXT NOT NULL,
+        created_at TIMESTAMP DEFAULT now()
       )`);
       
       // Push schema changes to the database
@@ -93,8 +105,6 @@ app.use((req, res, next) => {
         payroll_id INTEGER NOT NULL
       )`);
 
-
-      
       // Check if there's any data in the database
       const plumbersCountResult = await db
         .select({ count: sql<number>`count(*)` })
@@ -108,11 +118,25 @@ app.use((req, res, next) => {
       }
       
       log("Database setup complete!");
+      return; // Success, exit retry loop
+      
     } catch (error) {
-      log(`Database migration error: ${error}`);
-      console.error("Database migration error:", error);
+      retries--;
+      log(`Database migration error (${3 - retries}/3): ${error}`);
+      
+      if (retries === 0) {
+        log("Database migration failed after 3 attempts. Starting server without database connection.");
+        console.error("Database migration error:", error);
+      } else {
+        log(`Retrying in 2 seconds... (${retries} attempts remaining)`);
+        await new Promise(resolve => setTimeout(resolve, 2000));
+      }
     }
   }
+}
+
+(async () => {
+  await initializeDatabase();
   
   const server = await registerRoutes(app);
 

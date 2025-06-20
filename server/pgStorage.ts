@@ -223,13 +223,31 @@ export class PgStorage implements IStorage {
   }
 
   async getUserByUsername(username: string): Promise<User | undefined> {
-    const results = await db.select().from(users).where(eq(users.username, username));
-    return results.length ? results[0] : undefined;
+    if (!db) {
+      throw new Error("Database not initialized");
+    }
+    
+    try {
+      const results = await db.select().from(users).where(eq(users.username, username));
+      return results.length ? results[0] : undefined;
+    } catch (error) {
+      console.error("Database error in getUserByUsername:", error);
+      throw new Error("Database connection failed");
+    }
   }
 
   async getUserById(id: number): Promise<User | undefined> {
-    const results = await db.select().from(users).where(eq(users.id, id));
-    return results.length ? results[0] : undefined;
+    if (!db) {
+      throw new Error("Database not initialized");
+    }
+    
+    try {
+      const results = await db.select().from(users).where(eq(users.id, id));
+      return results.length ? results[0] : undefined;
+    } catch (error) {
+      console.error("Database error in getUserById:", error);
+      throw new Error("Database connection failed");
+    }
   }
 
 }
