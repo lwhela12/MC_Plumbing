@@ -301,7 +301,5 @@ import { PgStorage } from "./pgStorage";
 // Choose between memory storage and PostgreSQL based on environment
 const usePostgres = process.env.DATABASE_URL !== undefined;
 
-// Export the appropriate storage implementation
-export const storage: IStorage = usePostgres 
-  ? new PgStorage() 
-  : new MemStorage();
+// Temporarily use memory storage while fixing database connection issues
+export const storage: IStorage = new MemStorage();
