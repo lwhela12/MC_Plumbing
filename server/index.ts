@@ -54,85 +54,10 @@ app.use((req, res, next) => {
 });
 
 async function initializeDatabase() {
-  if (!process.env.DATABASE_URL || !db) {
-    log("Database URL not configured, skipping database setup");
-    return;
-  }
-
-  let retries = 3;
-  while (retries > 0) {
-    try {
-      log("Migrating database schema...");
-      
-      // Test connection first
-      await db.execute(sql`SELECT 1`);
-      
-      // Create users table for authentication
-      await db.execute(sql`CREATE TABLE IF NOT EXISTS users (
-        id SERIAL PRIMARY KEY,
-        username TEXT UNIQUE NOT NULL,
-        password_hash TEXT NOT NULL,
-        created_at TIMESTAMP DEFAULT now()
-      )`);
-      
-      // Push schema changes to the database
-      await db.execute(sql`CREATE TABLE IF NOT EXISTS plumbers (
-        id SERIAL PRIMARY KEY,
-        name TEXT NOT NULL,
-        email TEXT NOT NULL,
-        phone TEXT NOT NULL,
-        commission_rate DOUBLE PRECISION NOT NULL,
-        is_active BOOLEAN NOT NULL DEFAULT true,
-        start_date DATE NOT NULL
-      )`);
-      
-      await db.execute(sql`CREATE TABLE IF NOT EXISTS payrolls (
-        id SERIAL PRIMARY KEY,
-        week_ending_date DATE NOT NULL,
-        status TEXT NOT NULL DEFAULT 'draft',
-        created_at TIMESTAMP NOT NULL DEFAULT now()
-      )`);
-      
-      await db.execute(sql`CREATE TABLE IF NOT EXISTS jobs (
-        id SERIAL PRIMARY KEY,
-        date DATE NOT NULL,
-        customer_name TEXT NOT NULL,
-        revenue DOUBLE PRECISION NOT NULL,
-        parts_cost DOUBLE PRECISION NOT NULL,
-        outside_labor DOUBLE PRECISION NOT NULL,
-        commission_amount DOUBLE PRECISION NOT NULL,
-        plumber_id INTEGER NOT NULL,
-        payroll_id INTEGER NOT NULL
-      )`);
-
-      // Check if there's any data in the database
-      const plumbersCountResult = await db
-        .select({ count: sql<number>`count(*)` })
-        .from(plumbers);
-      const plumbersCount = Number(plumbersCountResult[0]?.count ?? 0);
-
-      if (plumbersCount === 0) {
-        log("Database initialized and empty.");
-      } else {
-        log(`Database already has ${plumbersCount} plumbers.`);
-      }
-      
-      log("Database setup complete!");
-      return; // Success, exit retry loop
-      
-    } catch (error) {
-      retries--;
-      log(`Database migration error (${3 - retries}/3): ${error}`);
-      
-      if (retries === 0) {
-        log("Database migration failed after 3 attempts. Starting server without database connection.");
-        console.error("Database migration error:", error);
-      } else {
-        log(`Retrying in 2 seconds... (${retries} attempts remaining)`);
-        await new Promise(resolve => setTimeout(resolve, 2000));
-      }
-    }
-  }
+  // Skip database connection attempts - using memory storage
+  log("Using memory storage - database connection skipped due to service outage");
+  log("All data will be stored in memory and can be exported via the dashboard");
+  return;
 }
 
 (async () => {

@@ -4,6 +4,7 @@ import StatCard from "@/components/dashboard/StatCard";
 import WeeklySummary from "@/components/dashboard/WeeklySummary";
 import QuickActions from "@/components/dashboard/QuickActions";
 import RecentActivity from "@/components/dashboard/RecentActivity";
+import DataExport from "@/components/DataExport";
 import { formatCurrency } from "@/lib/utils";
 import { formatDateForDisplay } from "@/lib/dateUtils";
 import { Payroll, PayrollSummary, Plumber, Job } from "@shared/schema";
@@ -77,7 +78,10 @@ const Dashboard: React.FC = () => {
       {/* Quick Actions and Recent Activity */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <QuickActions />
-        <RecentActivity />
+        <div className="space-y-6">
+          <RecentActivity />
+          <DataExport />
+        </div>
       </div>
     </div>
   );
