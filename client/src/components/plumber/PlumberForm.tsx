@@ -1,3 +1,4 @@
+import { formatDateForAPI, parseInputDate } from "@/lib/dateUtils";
 import React from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
@@ -40,16 +41,16 @@ const PlumberForm: React.FC<PlumberFormProps> = ({ plumber, onSuccess, onCancel 
       phone: plumber?.phone || "",
       commissionRate: plumber?.commissionRate || 30,
       isActive: plumber?.isActive ?? true,
-      startDate: plumber?.startDate ? new Date(plumber.startDate) : new Date(),
+      startDate: plumber?.startDate ? parseInputDate(plumber.startDate)! : new Date(),
     },
   });
 
   const mutation = useMutation({
     mutationFn: async (data: PlumberFormValues) => {
       if (isEditing) {
-        return apiRequest("PATCH", `/api/plumbers/${plumber.id}`, data);
+        return apiRequest("PATCH", `/api/plumbers/${plumber.id}`, { ...data, startDate: formatDateForAPI(data.startDate) });
       } else {
-        return apiRequest("POST", "/api/plumbers", data);
+        return apiRequest("POST", "/api/plumbers", { ...data, startDate: formatDateForAPI(data.startDate) });
       }
     },
     onSuccess: async () => {

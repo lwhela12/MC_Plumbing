@@ -1,3 +1,4 @@
+import { formatDateForAPI, parseInputDate } from "@/lib/dateUtils";
 import React, { useEffect, useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
@@ -55,7 +56,7 @@ const JobForm: React.FC<JobFormProps> = ({ job, payrollId, onSuccess, onCancel }
   const form = useForm<JobFormValues>({
     resolver: zodResolver(jobFormSchema),
     defaultValues: {
-      date: job?.date ? new Date(job.date) : new Date(),
+      date: job?.date ? parseInputDate(job.date)! : new Date(),
       customerName: job?.customerName || "",
       revenue: job?.revenue || 0,
       partsCost: job?.partsCost || 0,
@@ -96,7 +97,7 @@ const JobForm: React.FC<JobFormProps> = ({ job, payrollId, onSuccess, onCancel }
       const { commissionAmount } = calculateCommission(revenue, partsCost, outsideLabor, commissionRate);
       
       const jobData = {
-        date,
+        date: formatDateForAPI(date),
         customerName,
         revenue,
         partsCost,

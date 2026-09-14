@@ -29,9 +29,7 @@ const JobList: React.FC<JobListProps> = ({ payrollId, plumberId, onEditJob }) =>
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  const queryKey = plumberId
-    ? [`/api/jobs/plumber/${plumberId}`, `/api/jobs/payroll/${payrollId}`]
-    : [`/api/jobs/payroll/${payrollId}`];
+  const queryKey = [`/api/jobs/payroll/${payrollId}`, { plumberId }];
 
   const { data: jobs, isLoading } = useQuery<Job[]>({
     queryKey,

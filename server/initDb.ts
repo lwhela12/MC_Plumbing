@@ -1,5 +1,5 @@
-import { db } from "./db";
-import { plumbers, jobs, payrolls } from "@shared/schema";
+import { db } from "./db.js";
+import { plumbers, jobs, payrolls } from "../shared/schema.js";
 import { sql } from "drizzle-orm";
 
 export async function initializeDatabase() {

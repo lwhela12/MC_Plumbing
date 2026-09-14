@@ -92,7 +92,7 @@ const WeeklyPayroll: React.FC = () => {
         title: "Payroll finalized successfully",
         variant: "default",
       });
-      await queryClient.invalidateQueries({ queryKey: ["/api/payrolls"] });
+      await queryClient.invalidateQueries({ predicate: query => String(query.queryKey[0]).startsWith("/api/payrolls") });
     },
     onError: (error) => {
       toast({
@@ -115,7 +115,7 @@ const WeeklyPayroll: React.FC = () => {
         title: "Payroll saved as draft",
         variant: "default",
       });
-      await queryClient.invalidateQueries({ queryKey: ["/api/payrolls"] });
+      await queryClient.invalidateQueries({ predicate: query => String(query.queryKey[0]).startsWith("/api/payrolls") });
     },
     onError: (error) => {
       toast({

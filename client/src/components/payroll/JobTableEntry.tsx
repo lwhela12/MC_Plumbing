@@ -94,7 +94,7 @@ const JobTableEntry: React.FC<JobTableEntryProps> = ({ payrollId, plumber, jobs,
       );
       
       return apiRequest("POST", "/api/jobs", {
-        date: new Date(rowData.date),
+        date: rowData.date,
         customerName: rowData.customerName,
         revenue,
         partsCost,
@@ -136,7 +136,7 @@ const JobTableEntry: React.FC<JobTableEntryProps> = ({ payrollId, plumber, jobs,
       );
       
       return apiRequest("PATCH", `/api/jobs/${id}`, {
-        date: new Date(rowData.date),
+        date: rowData.date,
         customerName: rowData.customerName,
         revenue,
         partsCost,

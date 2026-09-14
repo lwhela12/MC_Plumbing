@@ -25,8 +25,10 @@ export default function Login() {
       }
       return response.json();
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/me"] });
+    onSuccess: async (user) => {
+      await queryClient.cancelQueries();
+      queryClient.removeQueries({ predicate: query => query.queryKey[0] !== "/api/me" });
+      queryClient.setQueryData(["/api/me"], user);
       navigate("/");
     },
     onError: (err: any) => {
@@ -49,7 +51,8 @@ export default function Login() {
   return (
     <div className="flex items-center justify-center min-h-screen p-4">
       <form onSubmit={onSubmit} className="w-full max-w-sm space-y-4">
-        <h1 className="text-2xl font-medium text-center">Login</h1>
+        <h1 className="text-2xl font-medium text-center">MC Plumbing</h1>
+        <p className="text-center text-sm text-muted-foreground">Sign in to your payroll workspace</p>
         {error && <div className="text-red-600 text-sm">{error}</div>}
         <Input
           placeholder="Username"
@@ -66,8 +69,7 @@ export default function Login() {
         />
         <Button type="submit" className="w-full">Login</Button>
         <div className="text-center text-sm">
-          <a href="/forgot-password" className="text-blue-600 hover:underline mr-2">Forgot password?</a>
-          <a href="/register" className="text-blue-600 hover:underline">Create account</a>
+          Contact your MC Plumbing administrator if you need access or password help.
         </div>
       </form>
     </div>

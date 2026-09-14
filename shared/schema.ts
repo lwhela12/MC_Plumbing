@@ -3,6 +3,13 @@ import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 import { sql } from "drizzle-orm";
 
+// PostgreSQL date-only columns must retain their calendar date across time zones.
+export const dateOnly = z.string().regex(/^\d{4}-\d{2}-\d{2}$/).refine(value => {
+  const parsed = new Date(value + "T00:00:00Z");
+  return !Number.isNaN(parsed.getTime()) && parsed.toISOString().slice(0, 10) === value;
+}, "Invalid calendar date");
+const money = z.number().finite().min(0).max(1_000_000_000);
+
 // User model
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
@@ -16,8 +23,8 @@ export const insertUserSchema = createInsertSchema(users).pick({
 });
 
 export const loginSchema = z.object({
-  username: z.string(),
-  password: z.string(),
+  username: z.string().min(1).max(100),
+  password: z.string().min(1).max(256),
 });
 
 export type InsertUser = z.infer<typeof insertUserSchema>;
@@ -41,7 +48,7 @@ export const insertPlumberSchema = createInsertSchema(plumbers).pick({
   commissionRate: true,
   isActive: true,
   startDate: true,
-});
+}).extend({ name: z.string().trim().min(1).max(200), email: z.string().max(320), phone: z.string().max(80), commissionRate: z.number().finite().min(0).max(100), startDate: dateOnly });
 
 export type InsertPlumber = z.infer<typeof insertPlumberSchema>;
 export type Plumber = typeof plumbers.$inferSelect;
@@ -68,7 +75,7 @@ export const insertJobSchema = createInsertSchema(jobs).pick({
   commissionAmount: true,
   plumberId: true,
   payrollId: true,
-});
+}).extend({ date: dateOnly, customerName: z.string().trim().min(1).max(300), revenue: money, partsCost: money, outsideLabor: money, commissionAmount: money, plumberId: z.number().int().positive(), payrollId: z.number().int().positive() });
 
 export type InsertJob = z.infer<typeof insertJobSchema>;
 export type Job = typeof jobs.$inferSelect;
@@ -88,7 +95,8 @@ export const insertPayrollSchema = createInsertSchema(payrolls)
   })
   // Allow string values that can be parsed as dates
   .extend({
-    weekEndingDate: z.coerce.date(),
+    weekEndingDate: dateOnly,
+    status: z.enum(["draft", "finalized"]).optional(),
   });
 
 export type InsertPayroll = z.infer<typeof insertPayrollSchema>;

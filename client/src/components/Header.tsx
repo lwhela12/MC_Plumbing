@@ -14,14 +14,17 @@ const Header: React.FC<HeaderProps> = ({ onOpenSidebar }) => {
     mutationFn: async () => {
       const response = await fetch("/api/logout", {
         method: "POST",
+        headers: { "Content-Type": "application/json" },
       });
       if (!response.ok) {
         throw new Error("Logout failed");
       }
       return response.json();
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/me"] });
+    onSuccess: async () => {
+      await queryClient.cancelQueries();
+      queryClient.setQueryData(["/api/me"], null);
+      queryClient.removeQueries({ predicate: query => query.queryKey[0] !== "/api/me" });
     },
   });
   

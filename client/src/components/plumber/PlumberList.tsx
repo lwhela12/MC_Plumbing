@@ -36,14 +36,14 @@ const PlumberList: React.FC<PlumberListProps> = ({ onAddPlumber, onEditPlumber }
     },
     onSuccess: async () => {
       toast({
-        title: "Plumber deleted successfully",
+        title: "Plumber archived successfully",
         variant: "default",
       });
-      await queryClient.invalidateQueries({ queryKey: ["/api/plumbers"] });
+      await Promise.all([queryClient.invalidateQueries({ queryKey: ["/api/plumbers"] }), queryClient.invalidateQueries({ queryKey: ["/api/plumbers/active"] })]);
     },
     onError: (error) => {
       toast({
-        title: "Failed to delete plumber",
+        title: "Failed to archive plumber",
         description: error.message,
         variant: "destructive",
       });
@@ -146,7 +146,7 @@ const PlumberList: React.FC<PlumberListProps> = ({ onAddPlumber, onEditPlumber }
                         <AlertDialogHeader>
                           <AlertDialogTitle>Are you sure?</AlertDialogTitle>
                           <AlertDialogDescription>
-                            This will permanently delete the plumber {plumber.name}. This action cannot be undone.
+                            This will archive the plumber {plumber.name}. Past jobs and payroll records will be preserved.
                           </AlertDialogDescription>
                         </AlertDialogHeader>
                         <AlertDialogFooter>
@@ -155,7 +155,7 @@ const PlumberList: React.FC<PlumberListProps> = ({ onAddPlumber, onEditPlumber }
                             className="bg-error text-white hover:bg-error-dark"
                             onClick={() => handleDelete(plumber.id)}
                           >
-                            Delete
+                            Archive
                           </AlertDialogAction>
                         </AlertDialogFooter>
                       </AlertDialogContent>

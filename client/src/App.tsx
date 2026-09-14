@@ -10,7 +10,6 @@ import Plumbers from "./pages/Plumbers";
 import WeeklyPayroll from "./pages/WeeklyPayroll";
 import Reports from "./pages/Reports";
 import Login from "./pages/Login";
-import Register from "./pages/Register";
 
 function Router() {
   const { data: user, isLoading } = useQuery({
@@ -40,7 +39,6 @@ function Router() {
   if (!user) {
     return (
       <Switch>
-        <Route path="/register" component={Register} />
         <Route component={Login} />
       </Switch>
     );

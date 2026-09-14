@@ -20,7 +20,7 @@ export function calculateCommission(
   const commissionBase = Math.max(0, revenue - adjustedCosts);
   
   // Calculate commission amount based on plumber's commission rate
-  const commissionAmount = commissionBase * (commissionRate / 100);
+  const commissionAmount = Math.round((commissionBase * (commissionRate / 100) + Number.EPSILON) * 100) / 100;
   
   return {
     revenue,

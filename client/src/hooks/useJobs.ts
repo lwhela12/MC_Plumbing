@@ -52,7 +52,7 @@ export function useJobs() {
       
       // Create the job data
       const jobData: InsertJob = {
-        date,
+        date: formatDateForAPI(date),
         customerName,
         revenue,
         partsCost,
@@ -106,7 +106,7 @@ export function useJobs() {
       });
       
       // Get the job to find its payrollId and plumberId
-      const job = await queryClient.fetchQuery({
+      const job = await queryClient.fetchQuery<Job>({
         queryKey: [`/api/jobs/${variables.id}`],
       });
       
@@ -141,7 +141,7 @@ export function useJobs() {
       
       // Get the job before it was deleted from the cache
       const queryCache = queryClient.getQueryCache();
-      const jobQuery = queryCache.find([`/api/jobs/${id}`]);
+      const jobQuery = queryCache.find({ queryKey: [`/api/jobs/${id}`] });
       const job = jobQuery?.state?.data as Job | undefined;
       
       await queryClient.invalidateQueries({ queryKey: ["/api/jobs"] });

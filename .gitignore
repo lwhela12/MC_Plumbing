@@ -4,3 +4,12 @@ dist
 server/public
 vite.config.ts.*
 *.tar.gz
+.private-migration/
+*.dump
+.env
+.env.*
+!.env.example
+public/
+.vercel/
+.vercel
+.env*

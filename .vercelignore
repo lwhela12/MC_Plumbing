@@ -1,0 +1,9 @@
+.git
+.private-migration
+*.dump
+.env*
+tests
+MIGRATION-ASSESSMENT.md
+node_modules
+
+public/
